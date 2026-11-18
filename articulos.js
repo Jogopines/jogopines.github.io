@@ -38,7 +38,7 @@ const AJUSTES = {
   "broche": {
     "activo": true,
     "precio": 0.25,
-    "cantidad": 163,
+    "cantidad": 31,
     "texto": "Broche trasero de mayor seguridad para evitar robos o pérdidas."
   },
   "colores": {
