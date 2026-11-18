@@ -352,8 +352,6 @@ body.sin-deco { background-image: none; }
 
 /* Retoques visuales Jogopines — noviembre 2026 */
 #marca { display: block; margin: 0 auto; width: min(100%, 420px); background: transparent; border: 0; padding: 0; color: inherit; cursor: pointer; font: inherit; border-radius: 20px; }
-#marca:hover img { transform: translateY(-2px) rotate(-2deg); }
-#marca img { transition: transform .2s ease; }
 #marca:focus-visible { outline: 3px solid var(--acento); outline-offset: 5px; }
 .enlaces a { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .icono-app { width: 18px; height: 18px; flex-shrink: 0; }
@@ -366,13 +364,70 @@ body.sin-deco { background-image: none; }
 .sin-deco .tarjeta-deco { display: none; }
 .sin-deco .articulo { padding-top: 10px; }
 @media (max-width: 520px) { .articulo { padding-top: 29px; } }
-@media (prefers-reduced-motion: reduce) { #marca img { transition: none; } #marca:hover img { transform: none; } }
 body.sin-deco { background-image: none; }
 
 /* Capy collection: 12 poses/accessories, reserved space around every product. */
 body.sin-deco { background-image: none; }
 #marca { perspective: 650px; }
-#marca img, #marca:hover img { transform: rotateX(var(--logo-rx,0deg)) rotateY(var(--logo-ry,0deg)); transform-origin: center; transition: transform 140ms ease-out; }
+.marca-giro {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1em;
+  height: 1em;
+  margin-inline: auto;
+  font-size: 150px;
+  transform-style: preserve-3d;
+  animation: girar-marca 16s linear infinite;
+}
+@media (max-width: 520px) { .marca-giro { font-size: 96px; } }
+#marca .marca-giro img {
+  grid-area: 1 / 1;
+  width: .96em;
+  height: .96em;
+  max-width: none;
+  object-fit: contain;
+  border-radius: 50%;
+  background: #f6e5c6;
+  backface-visibility: hidden;
+  transform: translateZ(.064em);
+}
+#marca .marca-giro img[aria-hidden="true"] {
+  transform: rotateY(180deg) translateZ(.064em);
+}
+.marca-canto {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: .069em;
+  height: .081em;
+  margin: -.0405em 0 0 -.0345em;
+  background: linear-gradient(180deg, #815330, #c69862 42%, #875532);
+  transform: rotateZ(var(--angulo)) translateY(-.5em) rotateX(90deg);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.marca-canto::before, .marca-canto::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: .033em;
+  background: #c99862;
+}
+.marca-canto::before {
+  top: 0;
+  transform-origin: center top;
+  transform: rotateX(40deg) translateY(-100%);
+}
+.marca-canto::after {
+  bottom: 0;
+  transform-origin: center bottom;
+  transform: rotateX(-40deg) translateY(100%);
+}
+@keyframes girar-marca { to { transform: rotateY(360deg); } }
+@media (prefers-reduced-motion: reduce) { .marca-giro { animation: none; } }
+
 .icono-app { width: 21px; height: 21px; }
 .deco-capi-izq,.deco-capi-der { width: 164px; }
 .articulo { isolation: isolate; overflow: visible; padding-top: 37px; padding-bottom: 35px; }
@@ -397,7 +452,6 @@ body.sin-deco { background-image: none; }
   .capy-carrito { width:43px; height:33px; top:-27px; }
   body { background-size:540px 840px; }
 }
-@media(prefers-reduced-motion:reduce) { #marca img,#marca:hover img { transform:none; transition:none; } }
 
 /* Fondo sin mosaico: decoración distribuida en toda la altura real. */
 body { position:relative; isolation:isolate; background-image:none; }
@@ -506,10 +560,26 @@ const marcaTexto = () => { marca.innerHTML = `<h1>${esc(negocio)}</h1>`; };
 if (logo) {
   const img = new Image();
   img.alt = negocio;
+  const reverso = new Image();
+  reverso.alt = "";
+  reverso.setAttribute("aria-hidden", "true");
+  const giro = document.createElement("span");
+  giro.className = "marca-giro";
   let intento = 0;
-  img.onerror = () => { if (intento++ === 0) img.src = LOGO_RESPALDO; else marcaTexto(); };
-  img.src = logo;
-  marca.appendChild(img);
+  img.onerror = () => {
+    if (intento++ > 0) { marcaTexto(); return; }
+    img.src = reverso.src = LOGO_RESPALDO;
+  };
+  img.src = reverso.src = logo;
+  for (let segmento = 0; segmento < 48; segmento++) {
+    const canto = document.createElement("span");
+    canto.className = "marca-canto";
+    canto.setAttribute("aria-hidden", "true");
+    canto.style.setProperty("--angulo", (segmento * 360 / 48) + "deg");
+    giro.appendChild(canto);
+  }
+  giro.append(img, reverso);
+  marca.appendChild(giro);
   const icono = document.createElement("link");
   icono.rel = "icon";
   const logoURL = new URL(logo, document.baseURI);
@@ -611,21 +681,6 @@ function decorarTarjeta(a) {
   return `<span class="capy-tarjeta capy-lugar-${lugar}" style="--capy-dx:${desplazamiento}px;--capy-giro:${giro}deg" aria-hidden="true"><svg viewBox="0 0 200 150" focusable="false"><use href="#capy-v2-${modelo}"/></svg></span>`;
 }
 const cartMascot = '<span class="capy-carrito" aria-hidden="true"><svg viewBox="0 0 200 150" focusable="false"><use href="#capy-v2-1"/></svg></span>';
-// The edge opposite the pointer rises. Touch users keep a stable, tappable logo.
-const movimientoLogo = window.matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
-function reposarLogo() { marca.style.setProperty('--logo-rx','0deg'); marca.style.setProperty('--logo-ry','0deg'); }
-marca.addEventListener('pointermove', ev => {
-  if (!movimientoLogo.matches || ev.pointerType === 'touch') return;
-  const r = marca.getBoundingClientRect();
-  const x = Math.max(-1,Math.min(1,(ev.clientX-r.left)/r.width*2-1));
-  const y = Math.max(-1,Math.min(1,(ev.clientY-r.top)/r.height*2-1));
-  marca.style.setProperty('--logo-rx',(-y*9).toFixed(2)+'deg');
-  marca.style.setProperty('--logo-ry',(x*11).toFixed(2)+'deg');
-});
-marca.addEventListener('pointerleave',reposarLogo);
-marca.addEventListener('blur',reposarLogo);
-movimientoLogo.addEventListener('change',reposarLogo);
-
 function estado(a) {
   const c = stockDe(a);
   if (c <= 0 && a.enCamino) return { txt: "En camino", cls: "camino" };
@@ -1446,7 +1501,7 @@ async function sincronizarHoja() {
   catch (err) { console.warn("No se pudo leer la hoja de inventario:", err.message); return false; }
 }
 const refrescar = () => { pintarFiltrosEstado(); pintarCuadricula(); pintarCarrito(false); };
-const VERSION = "Hecho con cariño por Jogopines 💛";
+const VERSION = "hecho con cariño por Jogopines 💛";
 document.body.insertAdjacentHTML("beforeend", `<p class="version">Catálogo ${VERSION}</p>`);
 console.info("Jogopines catálogo", VERSION);
 pintarFiltros();
