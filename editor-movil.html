@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogopines · Editor móvil</title>
+<link rel="manifest" href="editor-movil.webmanifest">
+<link rel="apple-touch-icon" href="Fotos/Jogopines_Original.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Editor Jogo">
+<meta name="theme-color" content="#8A3B4E">
+<style>
+:root { --fondo:#FBF6EE; --tarjeta:#fff; --texto:#3A3350; --suave:#7B7490; --acento:#8A3B4E; --borde:#EBDFD2; --agotado:#FFE3E8; --ok:#2F6B50; --mal:#B3261E; }
+* { box-sizing: border-box; margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--fondo); color: var(--texto); font-family: ui-rounded, "Nunito", "Segoe UI", system-ui, sans-serif; line-height: 1.4; }
+input, select, textarea, button { font: inherit; color: inherit; }
+input, select, textarea { width: 100%; border: 1px solid var(--borde); border-radius: 8px; padding: 6px 8px; background: var(--tarjeta); }
+button { cursor: pointer; border: 1px solid var(--borde); background: var(--tarjeta); border-radius: 8px; padding: 8px 14px; font-weight: 600; }
+button.principal { background: var(--acento); border-color: var(--acento); color: #fff; }
+input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--acento); }
+input[type=color] { width: 56px; height: 36px; padding: 2px; }
+
+.top { position: sticky; top: 0; z-index: 20; background: var(--fondo); padding: 12px 16px 0; border-bottom: 1px solid var(--borde); }
+.top h1 { font-size: 1.25rem; }
+.barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0; }
+#estado { font-size: .9rem; color: var(--suave); }
+#estado.ok { color: var(--ok); font-weight: 600; }
+#mensaje { font-size: .9rem; }
+#mensaje.ok { color: var(--ok); } #mensaje.mal { color: var(--mal); font-weight: 600; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs button { border-radius: 8px 8px 0 0; border-bottom: none; }
+.tabs button.activa { background: var(--acento); color: #fff; border-color: var(--acento); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 16px; }
+.layout.con-previa { grid-template-columns: minmax(0, 1fr) 440px; }
+#previa { position: sticky; top: 150px; height: calc(100vh - 170px); }
+#marco { width: 100%; height: 100%; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
+
+.herr { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.herr input[type=search], .herr select { max-width: 220px; }
+#conteo { color: var(--suave); font-size: .9rem; }
+.sticky-tools { position: sticky; top: var(--top-sticky-height, 0px); z-index: 10; background: var(--fondo); padding: 8px 0 10px; border-bottom: 1px solid var(--borde); box-shadow: 0 8px 14px rgba(58, 51, 80, .07); }
+.tabla { overflow-x: auto; }
+table { width: 100%; min-width: 1600px; table-layout: fixed; border-collapse: collapse; background: var(--tarjeta); border: 1px solid var(--borde); }
+th:nth-child(1), td:nth-child(1) { width: 2.5%; }
+th:nth-child(2), td:nth-child(2) { width: 14%; }
+th:nth-child(3), td:nth-child(3) { width: 120px; }
+th:nth-child(4), td:nth-child(4) { width: 92px; }
+th:nth-child(5), td:nth-child(5) { width: 92px; }
+th:nth-child(6), td:nth-child(6) { width: 64px; text-align: center; }
+th:nth-child(7), td:nth-child(7) { width: 64px; text-align: center; }
+th:nth-child(8), td:nth-child(8) { width: 240px; }
+th:nth-child(9), td:nth-child(9) { width: 19%; }
+th:nth-child(10), td:nth-child(10) { width: auto; }
+th:nth-child(11), td:nth-child(11) { width: 120px; }
+th { text-align: left; font-size: .8rem; color: var(--suave); padding: 8px; background: #F5EBDD; }
+th:first-child, td:first-child { text-align: center; width: 38px; }
+.bulk-bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; margin:0 0 10px; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+.bulk-bar span { color:var(--suave); font-size:.9rem; font-weight:700; margin-right:auto; }
+.bulk-bar button { padding:7px 10px; font-size:.86rem; }
+.bulk-bar button:disabled { opacity:.45; cursor:not-allowed; }
+.chk-seleccion, .chk-camino { width:18px; height:18px; accent-color:var(--acento); cursor:pointer; }
+tr.fila-camino td { background:#EAF2FC; }
+.nota-camino-form { display:block; color:var(--suave); font-size:.82rem; margin:-4px 0 10px 26px; }
+td { padding: 4px; border-top: 1px solid var(--borde); vertical-align: middle; }
+tr.agotado td { background: var(--agotado); }
+.num { width: 84px; } .emoji { width: 56px; text-align: center; }
+.foto { display: flex; gap: 6px; align-items: center; min-height: 36px; }
+.foto label { cursor: pointer; padding: 5px 8px; border: 1px solid var(--borde); border-radius: 8px; background: var(--tarjeta); }
+.mini { width: var(--mini, 96px); height: var(--mini, 96px); object-fit: cover; border-radius: 10px; flex: none; background: #F5EBDD; cursor: zoom-in; transition: transform .15s; }
+.mini:hover { transform: scale(1.05); }
+.mini.rota { outline: 2px solid var(--mal); }
+.x { padding: 6px 10px; color: var(--acento); }
+.acciones-fila { display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.acciones-fila button { flex: none; }
+.acciones-fila .editar-fila { width: 68px; min-width: 68px; padding: 6px 4px; font-size: .82rem; }
+.acciones-fila .quitar-fila { width: 36px; min-width: 36px; padding: 6px 3px; }
+
+.campo { display: grid; grid-template-columns: 210px 1fr; gap: 6px 16px; align-items: start; max-width: 800px; margin-bottom: 14px; }
+.campo > label { padding-top: 7px; font-weight: 600; }
+.nota { grid-column: 2; color: var(--suave); font-size: .85rem; }
+.fila-cat { display: flex; gap: 8px; max-width: 520px; margin-bottom: 8px; }
+.colores { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; max-width: 800px; }
+.colores label { display: flex; align-items: center; gap: 10px; }
+.ayuda { max-width: 800px; line-height: 1.55; }
+.ayuda h3 { margin: 18px 0 4px; font-size: 1.05rem; }
+.ayuda ol, .ayuda ul { padding-left: 22px; }
+.ayuda code { background: #F5EBDD; padding: 1px 6px; border-radius: 5px; }
+.emoji-sel { width: 175px; }
+.sin-medidas .medidas { opacity: .45; }
+.chk-med { display: flex; gap: 6px; align-items: center; font-weight: 600; }
+dialog { border: none; border-radius: 16px; padding: 0; width: min(720px, 94vw); background: var(--tarjeta); color: var(--texto); margin: auto; }
+dialog::backdrop { background: rgba(58, 51, 80, .5); }
+.form-art { padding: 20px; }
+.form-art h2 { font-size: 1.2rem; margin-bottom: 14px; }
+.form-cuerpo { display: grid; grid-template-columns: 200px 1fr; gap: 20px; }
+@media (max-width: 640px) { .form-cuerpo { grid-template-columns: 1fr; } }
+.form-prev { aspect-ratio: 1 / 1; width: 100%; border-radius: 12px; background: #F5EBDD; display: grid; place-items: center; font-size: 3rem; overflow: hidden; }
+.form-prev img { width: 100%; height: 100%; object-fit: cover; }
+.btn-foto-grande { display: block; text-align: center; margin-top: 10px; padding: 8px; border: 1px solid var(--borde); border-radius: 8px; font-weight: 600; cursor: pointer; }
+.form-foto small { display: block; margin-top: 6px; color: var(--suave); word-break: break-all; }
+.form-campos label { display: block; font-weight: 600; margin-bottom: 10px; }
+.form-campos label input:not([type=checkbox]), .form-campos label select, .form-campos label textarea { margin-top: 4px; font-weight: 400; }
+.form-campos .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-campos label.check { display: flex; gap: 8px; align-items: center; }
+.form-botones { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
+#fError { color: var(--mal); font-weight: 600; min-height: 1.2em; margin-top: 8px; }
+.aviso-hoja { background: #E8F3EC; border: 1px solid #BFDCCB; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: .92rem; }
+.res { white-space: pre-wrap; margin-top: 8px; font-size: .9rem; }
+.res.ok { color: var(--ok); } .res.mal { color: var(--mal); font-weight: 600; }
+dialog { max-height: 92vh; overflow-y: auto; }
+.pz-box { margin-top: 12px; border: 1px solid var(--borde); border-radius: 12px; padding: 8px 12px; background: var(--fondo); }
+.pz-box > summary { cursor: pointer; font-weight: 700; }
+.pz-nota { color: var(--suave); font-size: .85rem; margin: 8px 0; }
+.pz-tabla { overflow-x: auto; }
+.pz-fila { display: grid; grid-template-columns: minmax(130px, 1.4fr) minmax(110px, 1fr) 78px 64px minmax(170px, 1.3fr) 34px; gap: 6px; margin-bottom: 6px; align-items: center; min-width: 660px; }
+.pz-cab { font-size: .75rem; color: var(--suave); font-weight: 600; }
+.pz-barra { margin: 6px 0; }
+.pz-pegar { margin: 8px 0; }
+.pz-pegar summary { cursor: pointer; color: var(--suave); }
+.pz-pegar textarea { margin: 6px 0; }
+.pz-box > label { display: block; font-weight: 600; margin-top: 8px; }
+.pz-rapido input { width: 64px; display: inline-block; margin: 0 4px; }
+.pz-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* --- tabla: casillas centradas y fotos grandes --- */
+#tablaArt[data-fotos="s"] { --mini: 44px; } #tablaArt[data-fotos="m"] { --mini: 72px; }
+#tablaArt[data-fotos="l"] { --mini: 96px; } #tablaArt[data-fotos="xl"] { --mini: 140px; }
+.chk-celda { display: flex; justify-content: center; align-items: center; min-height: 36px; }
+.chk-celda input, .foto input[type=checkbox] { margin: 0; flex: none; display: block; }
+.medidas-control { display: flex; align-items: center; gap: 0; min-height: 36px; }
+.medidas-control .chk-celda { width: 56px; flex: none; }
+.medidas-control > input { min-width: 0; flex: 1; }
+td { height: 1px; }
+.foto-celda { display: flex; gap: 8px; align-items: center; }
+.foto-celda .foto-campo { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.foto-celda .foto-campo > div { display: flex; gap: 6px; align-items: center; }
+.foto-celda input { min-width: 0; }
+.foto-campo label { display: flex; align-items: center; justify-content: center; height: 36px; min-width: 36px; padding: 0 8px; }
+.tam-fotos { display: flex; gap: 6px; align-items: center; font-weight: 600; font-size: .9rem; }
+.tam-fotos select { width: auto; }
+/* --- categorías --- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 14px; }
+.chip { border: 2px solid var(--borde); background: var(--tarjeta); padding: 8px 16px; border-radius: 999px; font-weight: 700; }
+.chip small { opacity: .7; margin-left: 6px; font-weight: 600; }
+.chip.activo { background: var(--acento); border-color: var(--acento); color: #fff; }
+tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--acento); height: auto; }
+.grupo-btn { width: 100%; text-align: left; border: none; background: none; padding: 9px 12px; font-size: 1rem; display: flex; gap: 8px; align-items: center; border-radius: 0; }
+.grupo-btn span { color: var(--suave); font-weight: 600; font-size: .85rem; }
+/* --- GitHub y avisos --- */
+.chip-gh { border-radius: 999px; font-size: .85rem; padding: 6px 12px; color: var(--suave); }
+.chip-gh.ok { color: var(--ok); border-color: var(--ok); }
+.toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); max-width: min(600px, 92vw); z-index: 60; padding: 12px 18px; border-radius: 12px;
+  background: #3A3350; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.25); font-weight: 600; cursor: pointer; }
+.toast.ok { background: var(--ok); } .toast.mal { background: var(--mal); } .toast a { color: #fff; text-decoration: underline; }
+.pasos-gh { padding-left: 20px; color: var(--suave); font-size: .92rem; margin: 8px 0 12px; display: grid; gap: 6px; }
+.pasos-gh b { color: var(--texto); }
+.gh-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gh-campos label { display: block; font-weight: 600; font-size: .9rem; }
+.gh-campos input { margin-top: 4px; font-weight: 400; }
+.gh-campos .ancho { grid-column: 1 / -1; }
+#lightbox { width: auto; max-width: 94vw; background: #fff; text-align: center; padding: 12px; cursor: zoom-out; }
+#lightbox img { max-width: 90vw; max-height: 78vh; display: block; margin: 0 auto; border-radius: 10px; }
+#lightbox p { margin-top: 8px; font-weight: 700; }
+/* --- pantallas pequeñas --- */
+@media (max-width: 760px) {
+  .top { padding: 10px 10px 0; }
+  .sticky-tools { padding-top: 6px; }
+  .barra { gap: 8px; }
+  .barra > button { flex: 1 1 150px; }
+  #estado { flex: 1 1 100%; order: 9; font-size: .82rem; }
+  #publicar { flex: 1 1 100%; padding: 12px 14px; font-size: 1rem; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; }
+  .tabs button { flex: none; }
+  .layout { padding: 10px; }
+  .herr input[type=search], .herr select { max-width: none; flex: 1 1 140px; }
+  .gh-campos { grid-template-columns: 1fr; }
+  .chip { padding: 7px 12px; }
+}
+#conectar, #reconectar, #vista, .tam-fotos { display:none !important; }
+body { padding-bottom:env(safe-area-inset-bottom, 0px); }
+input, select, textarea { font-size:16px; }
+.top { padding-top:max(10px, env(safe-area-inset-top, 0px)); }
+.top h1 small { display:none; }
+.top h1::after { content:' · móvil'; font-size:.85rem; color:var(--suave); }
+.tabs { flex-wrap:nowrap; overflow-x:auto; }
+.tabs button { flex:none; }
+.sticky-tools { position:static; box-shadow:none; }
+#avisoHoja { font-size:.8rem; }
+#estado { flex-basis:100%; }
+.barra #publicar { flex:1; padding:10px; }
+.barra > #ghEstado { flex:1; }
+.herr input[type=search] { width:100%; max-width:none; }
+.chips { flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; }
+.chip { white-space:nowrap; flex:none; }
+.bulk-bar { gap:8px; }
+.bulk-bar span { flex-basis:100%; }
+.layout.con-previa { grid-template-columns:1fr; }
+@media(max-width:900px) {
+  .tabla { overflow:visible; }
+  #tablaArt { display:block; min-width:0; border:0; background:transparent; }
+  #tablaArt thead { display:none; }
+  #filas { display:grid; gap:12px; }
+  #filas tr:not(.grupo-fila) { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--borde); border-radius:14px; overflow:hidden; background:var(--tarjeta); padding:10px; gap:10px; }
+  #filas tr td { display:block; width:auto; height:auto; border:0; padding:0; min-width:0; }
+  #filas tr:not(.grupo-fila) td::before { content:attr(data-campo); display:block; font-size:.75rem; color:var(--suave); font-weight:600; margin-bottom:4px; }
+  #filas td:nth-child(1), #filas td:nth-child(2), #filas td:nth-child(9), #filas td:nth-child(10), #filas td:nth-child(11) { grid-column:1 / -1; }
+  #filas td:first-child { text-align:left; }
+  #filas td:nth-child(6), #filas td:nth-child(7) { text-align:center; }
+  #filas .num { width:100%; }
+  #filas .grupo-fila { display:block; }
+  #filas .grupo-fila td { width:100%; background:transparent; }
+  #filas .grupo-btn { border-radius:10px; background:#F5EBDD; }
+  #filas .foto-celda, #filas .foto-celda .foto-campo { min-width:0; }
+  .campo { grid-template-columns:1fr; gap:4px; }
+  .campo .nota { grid-column:1; }
+  .form-cuerpo { grid-template-columns:1fr; }
+  .form-foto { max-width:180px; margin:auto; }
+  dialog { width:calc(100vw - 20px); max-height:90dvh; }
+  .form-art { padding:16px; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>Editor Jogopines <small style="font-weight:400;color:var(--suave)">v4</small></h1>
+  <div class="barra">
+    <button id="conectar" class="principal">📂 Conectar carpeta</button>
+    <button id="reconectar" hidden>↻ Reconectar carpeta</button>
+    <span id="estado"></span>
+    <button id="publicar" class="principal" title="Sube articulos.js y las fotos nuevas a tu sitio en GitHub">🚀 Publicar</button>
+    <button id="ghEstado" class="chip-gh" title="Conexión con GitHub (para publicar)">GitHub: sin conectar</button>
+    <button id="vista">👁 Vista previa</button>
+    <span id="mensaje"></span>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-t="articulos" class="activa">Artículos</button>
+    <button data-t="categorias">Categorías</button>
+    <button data-t="ajustes">Negocio y contacto</button>
+    <button data-t="colores">Colores</button>
+    <button data-t="ayuda">Ayuda</button>
+  </nav>
+</div>
+
+<div class="layout" id="layout">
+  <div>
+    <section id="t-articulos">
+      <div class="sticky-tools">
+      <div class="aviso-hoja" id="avisoHoja" hidden>📊 Inventario enlazado a tu hoja de cálculo: en el catálogo, la <b>cantidad</b> y el <b>precio</b> de cada artículo salen de la hoja (si el nombre coincide). Los de aquí se usan solo si la hoja no está disponible.</div>
+      <div class="chips" id="chips"></div>
+      <div class="herr">
+        <input type="search" id="buscar" placeholder="Buscar por nombre...">
+        <label class="tam-fotos">Fotos <select id="tamFotos"><option value="s">Pequeñas</option><option value="m">Medianas</option><option value="l" selected>Grandes</option><option value="xl">Muy grandes</option></select></label>
+        <button id="agregar" class="principal">+ Agregar artículo</button>
+        <button id="detectar" title="Convierte en piezas los sets cuyas medidas traen varios nombres">📦 Detectar packs</button>
+        <label class="chk-med"><input type="checkbox" id="medTop"> 📏 Mostrar medidas en el catálogo</label>
+        <span id="conteo"></span>
+      </div>
+      <div class="bulk-bar">
+        <span id="seleccionConteo">0 artículos seleccionados</span>
+        <button type="button" id="marcarCamino" disabled>📦 Marcar como «Viene en camino»</button>
+        <button type="button" id="quitarCamino" disabled>✓ Quitar marca de seleccionados</button>
+        <button type="button" id="limpiarSeleccion" disabled>Limpiar selección</button>
+      </div>
+      </div>
+      <div class="tabla"><table id="tablaArt" data-fotos="l">
+        <thead><tr><th><input type="checkbox" id="selTodosArt" class="chk-seleccion" title="Seleccionar todos los artículos visibles"></th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Cantidad</th><th>Viene en camino</th><th>Broche</th><th class="medidas">Medidas</th><th>Foto</th><th>Descripción</th><th></th></tr></thead>
+        <tbody id="filas"></tbody>
+      </table></div>
+    </section>
+
+    <section id="t-categorias" hidden>
+      <p style="max-width:640px;margin-bottom:12px;color:var(--suave)">Cada categoría tiene un solo emoji que representa a todos sus pines (por ejemplo 🎮 para videojuegos y 📺 para series). Se ve en los botones del catálogo y en los artículos que todavía no tienen foto. Si cambias el nombre de una categoría, sus artículos se actualizan solos.</p>
+      <div id="cats"></div>
+      <button id="agregarCat">+ Agregar categoría</button>
+    </section>
+
+    <section id="t-ajustes" hidden><div id="ajustes"></div></section>
+
+    <section id="t-colores" hidden>
+      <p style="max-width:640px;margin-bottom:12px;color:var(--suave)">Toca un cuadro de color para cambiarlo. Cada categoría usa un pastel distinto para el fondo de sus Fotos. Activa la vista previa para ver el resultado al momento.</p>
+      <div class="colores" id="colores"></div>
+      <p style="margin-top:14px"><button id="restaurar">Restaurar colores originales</button></p>
+    </section>
+
+    <section id="t-ayuda" hidden class="ayuda">
+      <h3>Primera vez</h3>
+      <ol>
+        <li>Abre este archivo con <b>Chrome o Edge</b> en tu computadora.</li>
+        <li>Presiona <b>📂 Conectar carpeta</b> y elige la carpeta donde están <code>index.html</code>, <code>articulos.js</code> y <code>Fotos</code>. Acepta el permiso para editar archivos.</li>
+        <li>Listo: desde ahora cada cambio se guarda solo en esa carpeta. Activa <b>👁 Vista previa</b> para ver el catálogo al lado.</li>
+      </ol>
+      <h3>Agregar o quitar un artículo</h3>
+      <p>Pestaña <b>Artículos</b> → <b>+ Agregar artículo</b>: se abre un formulario con todo lo necesario (foto, nombre, categoría, precio, cantidad, descripción, medidas y broche). Presiona <b>Guardar artículo</b>, o <b>Guardar y agregar otro</b> para cargar varios seguidos. Para corregir uno usa el <b>✏️</b> de su fila (mismo formulario); para cambios rápidos como precio o cantidad, escribe directo en la tabla. Para quitarlo, la <b>✕</b>.</p>
+      <h3>Artículos que vienen en camino</h3>
+      <p>Activa la casilla <b>Viene en camino</b> en la fila o desde el formulario del artículo. Si todavía hay unidades en inventario, seguirán apareciendo como <b>Disponibles</b> y también mostrarán que viene una reposición. Si no queda ninguna unidad, aparecerán como <b>En camino</b>: el cliente podrá consultar por WhatsApp, pero no agregarlos al carrito ni comprarlos hasta que los recibas. Cuando llegue el pedido, desmarca la casilla. Para varios artículos a la vez, selecciónalos en la primera columna y usa los botones de marcado masivo.</p>
+      <h3>Precios con decimales</h3>
+      <p>Escribe <code>0.50</code>, <code>1.25</code>, <code>3</code>... (usa el punto, o la coma si tu teclado la pone). En el catálogo siempre se ven con dos decimales: $0.50, $3.00.</p>
+      <h3>Disponibilidad y cantidad</h3>
+      <p>Cambia el número de <b>Cantidad</b>. Con <code>0</code> sale "Agotado" (la fila se pinta rosa), con 1 a 3 sale "Últimas X", y con más, "Disponible". Si tienes un diseño repetido, no lo dupliques: sube la cantidad.</p>
+      <h3>Fotos</h3>
+      <ol>
+        <li>En la fila del artículo, toca <b>📁</b> y elige la foto de tu computadora.</li>
+        <li>El editor la reduce (para que el catálogo cargue rápido), la copia solita a la carpeta <code>Fotos</code> y escribe su nombre.</li>
+        <li>Verás una miniatura. Si aparece con borde rojo, esa foto no se encuentra: vuelve a elegirla con 📁.</li>
+      </ol>
+      <p>Sin foto, se muestra el emoji de su categoría (🎮 videojuegos, 📺 series...).</p>
+      <h3>Broche de seguridad</h3>
+      <p>En <b>Negocio y contacto</b> activas el broche y pones su precio, su descripción y <b>cuántos tienes</b> (actualízalo cuando vendas broches por fuera). En la tabla, marca la casilla <b>Broche</b> de los artículos que lo ofrecen. Al pedir, el cliente ve cuántos hay disponibles, puede elegir cuántos agregar (sin pasar de lo que hay) y el total se ajusta solo.</p>
+      <h3>Medidas de los pines</h3>
+      <p>Escríbelas en el formulario o en la columna <b>Medidas</b> (ej. <code>3 × 2.5 cm</code>). Hay dos casillas: la de arriba (<b>📏 Mostrar medidas en el catálogo</b>) enciende o apaga las medidas de todos los pines, y la casilla junto a cada medida decide si se muestra en ese pin. Si las ocultas, se conservan guardadas.</p>
+      <h3>Categorías y emojis</h3>
+      <p>Pestaña <b>Categorías</b>: cambia nombre y emoji, agrega o quita. El orden de la lista es el orden de los botones del catálogo.</p>
+      <h3>Logo, textos, Instagram y WhatsApp</h3>
+      <p>Pestaña <b>Negocio y contacto</b>. El logo se cambia con 📁 igual que una foto. El WhatsApp se escribe con tu número (se limpia solo). Si dejas Instagram o WhatsApp vacío, ese botón desaparece.</p>
+      <h3>Colores</h3>
+      <p>Pestaña <b>Colores</b>: toca un cuadro, elige el tono y mira la vista previa.</p>
+      <h3>Pedidos especiales (pines agotados)</h3>
+      <p>Cuando un pin se agota, en su ventana aparece una opción para <b>encargarlo</b>: el cliente paga el precio del pin más un cargo adicional tuyo y te escribe por WhatsApp con el desglose. Se configura en <b>Negocio y contacto → Pedidos especiales</b> (cargo, si es por pieza o por pedido, máximo de piezas, tiempo estimado y mensaje). Para que un artículo no se pueda encargar, desmarca «Permitir pedido especial» en su formulario (✏️).</p>
+      <h3>Inventario en tu hoja de cálculo</h3>
+      <p>Lleva tu inventario en una hoja de Google Sheets (puedes usar la plantilla <code>inventario-jogopines.xlsx</code>). Publica la hoja <b>Catalogo</b> como CSV, pega el enlace en <b>Negocio y contacto → Inventario en hoja de cálculo</b> y presiona <b>🔎 Probar enlace</b>. Desde ahí, la cantidad y el precio del catálogo salen de la hoja y se actualizan en unos minutos, sin volver a subir la carpeta. El <b>nombre</b> del pin debe ser igual en la hoja y en el editor. Con la plantilla nueva también se controlan las <b>piezas de los packs</b> (filas «Pack | Pieza»): cuando vendes una pieza por fuera y la anotas en la hoja Ventas, deja de salir disponible en el catálogo.</p>
+      <h3>Packs: elegir pin por pin</h3>
+      <p>En el formulario de un artículo (✏️) abre <b>📦 Piezas del pack</b> y escribe cuántos pines trae y presiona <b>Crear</b>: se crean campos vacíos con las guías «Pin 1», «Pin 2»... Escribe directamente el nombre y las medidas. El cliente marca los que quiere (o «Seleccionar todos») y el precio cambia. Cada pieza cuesta el precio del artículo, que es <b>por pin</b>, salvo que le pongas otro precio. Si quieres un precio especial por llevar todo, ponlo en «Precio si se llevan todas». Para marcar un pin como vendido, pon su cantidad en 0. En <b>Negocio y contacto</b> eliges el efecto visual de la selección.</p>
+      <h3>Carrito de compras</h3>
+      <p>El cliente agrega pines al carrito y lo ve a un costado, con el desglose de cada artículo y el total. Desde ahí pide todo por WhatsApp o paga con Yappy. Se puede ocultar en <b>Negocio y contacto → Carrito de compras</b>.</p>
+      <h3>Pago con Yappy</h3>
+      <p>En <b>Negocio y contacto → Pago con Yappy</b> activas el botón, escribes tu número y eliges la imagen de tu QR (guárdala antes en la carpeta <code>Fotos</code>). El cliente ve el QR, tu número y el total; paga en su app y te envía el comprobante por WhatsApp. Tú confirmas el pago a mano.</p>
+      <h3>Publicar con un clic (GitHub)</h3>
+      <p>Presiona <b>🚀 Publicar</b>: sube tu <code>articulos.js</code> y las fotos nuevas a tu repositorio y el sitio se actualiza en 1 o 2 minutos, sin abrir GitHub. La primera vez te guía para conectarlo (usuario, repositorio y un token); también puedes abrir esa ventana con el botón <b>GitHub: sin conectar</b>. Si en GitHub hay una versión distinta a la que tienes abierta (por ejemplo, si cambiaste algo desde otro lado), te avisa antes de reemplazarla y te deja ver lo que hay publicado.</p>
+      <h3>Subir los cambios a internet</h3>
+      <p>Usa <b>🚀 Publicar</b> (arriba). Si prefieres GitHub Desktop, después de publicar desde el editor haz <b>Fetch origin</b> y <b>Pull</b> para que tu copia local quede al día.</p>
+      <h3>Filtros de disponibilidad del catálogo</h3>
+      <p>El catálogo público incluye filtros para <b>Disponibles</b>, <b>En camino</b>, <b>Agotados</b> y <b>Todos</b>. Un artículo con stock actual y reposición pendiente puede aparecer tanto en Disponibles como en En camino.</p>
+      <h3>Reglas para que las Fotos se vean en internet</h3>
+      <ul>
+        <li>La carpeta se llama exactamente <code>Fotos</code> y está junto a <code>index.html</code>.</li>
+        <li>En internet se distinguen mayúsculas: <code>Logo.PNG</code> no es lo mismo que <code>logo.png</code>. Con el botón 📁 el editor ya pone los nombres en minúsculas y sin espacios ni acentos.</li>
+        <li>Al subir, arrastra la carpeta completa, no solo los archivos .html.</li>
+      </ul>
+    </section>
+  </div>
+  <aside id="previa" hidden><iframe id="marco" title="Vista previa del catálogo"></iframe></aside>
+</div>
+
+<dialog id="formArt">
+  <div class="form-art">
+    <h2 id="formTitulo">Agregar artículo</h2>
+    <div class="form-cuerpo">
+      <div class="form-foto">
+        <div class="form-prev" id="fPrev">📷</div>
+        <label class="btn-foto-grande">📁 Elegir foto<input type="file" id="fFoto" accept="image/*" hidden></label>
+        <small id="fFotoNombre"></small>
+      </div>
+      <div class="form-campos">
+        <label>Nombre *<input id="fNombre" placeholder="ej. Pin Snoopy durmiendo"></label>
+        <label>Categoría<select id="fCat"></select></label>
+        <div class="dos">
+          <label>Precio<input id="fPrecio" type="number" min="0" step="0.01" placeholder="ej. 1.50"></label>
+          <label>Cantidad<input id="fCantidad" type="number" min="0" step="1"></label>
+        </div>
+        <label>Descripción<textarea id="fDesc" rows="3" placeholder="Una o dos líneas"></textarea></label>
+        <label>Medidas (opcional)<input id="fMedidas" placeholder="ej. 3 × 2.5 cm"></label>
+        <label class="check"><input type="checkbox" id="fVerMedidas"> Mostrar las medidas de este pin</label>
+        <label class="check"><input type="checkbox" id="fBroche"> Ofrece broche de seguridad</label>
+        <label class="check"><input type="checkbox" id="fEncargo"> Permitir pedido especial si se agota</label>
+        <label class="check"><input type="checkbox" id="fEnCamino"> Viene en camino</label>
+        <small class="nota-camino-form">Si todavía quedan unidades, seguirán apareciendo como disponibles. Cuando recibas la reposición, desmarca esta casilla.</small>
+      </div>
+    </div>
+    <details class="pz-box" id="fPiezasBox">
+      <summary>📦 Piezas del pack (opcional)</summary>
+      <p class="pz-nota">Si este artículo es un pack, escribe cuántos pines trae y presiona <b>Crear</b>: se crean campos vacíos con las guías tenues «Pin 1», «Pin 2», «Pin 3»... Escribe o pega directamente el nombre y completa las medidas. El cliente podrá elegir cuáles llevar y el precio cambia según su elección. Cada pieza cuesta el <b>Precio</b> de arriba (por pin), salvo que le pongas otro. La <b>cantidad</b> del artículo se calcula sola sumando las piezas disponibles.</p>
+      <div class="pz-tabla" id="fPiezas"></div>
+      <div class="pz-barra">
+        <span class="pz-rapido">Crear <input type="number" id="fNPiezas" min="1" max="60" value="3"> pines de una vez <button type="button" id="fCrearN">Crear</button></span>
+        <button type="button" id="fAddPieza">+ Agregar una pieza</button>
+      </div>
+      <details class="pz-pegar"><summary>Pegar una lista de nombres (opcional)</summary>
+        <p class="pz-nota" style="margin:6px 0">Si ya tienes los nombres escritos, pégalos aquí, uno por línea. Si quieres, agrega las medidas así: «Nombre: 3 × 3 cm».</p>
+        <textarea id="fPegar" rows="4" placeholder="Una pieza por línea. Ejemplo:&#10;Pin sol: 3 × 3 cm&#10;Pin luna: 3 × 3.2 cm"></textarea>
+        <button type="button" id="fCrearPiezas">Crear piezas con esta lista</button></details>
+      <label>Precio si se llevan todas (opcional)<input id="fPrecioPack" type="number" min="0" step="0.01" placeholder="ej. 5.00 (vacío = suma de las piezas)"></label>
+    </details>
+    <p id="fError"></p>
+    <div class="form-botones">
+      <button id="fCancelar">Cancelar</button>
+      <button id="fOtro">Guardar y agregar otro</button>
+      <button id="fGuardar" class="principal">Guardar artículo</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="lightbox"><img id="lbImg" alt=""><p id="lbTit"></p></dialog>
+
+<dialog id="dlgGH">
+  <div class="form-art">
+    <h2>Conectar con GitHub</h2>
+    <p style="color:var(--suave)">Con esta conexión, el botón <b>🚀 Publicar</b> sube tus cambios y fotos a tu sitio sin abrir GitHub. Solo se hace una vez.</p>
+    <ol class="pasos-gh">
+      <li>Escribe tu <b>usuario</b> de GitHub y el <b>nombre del repositorio</b> de tu catálogo.</li>
+      <li>Crea tu <b>token</b> (una llave que solo permite escribir en ese repositorio): <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">abre esta página de GitHub</a>. Ponle un nombre (ej. «Editor Jogopines») y un vencimiento. En <b>Repository access</b> elige <b>Only select repositories</b> y marca tu catálogo. En <b>Repository permissions</b> pon <b>Contents</b> en <b>Read and write</b>. Presiona <b>Generate token</b> y copia el texto.</li>
+      <li>Pégalo abajo y presiona <b>Probar y guardar</b>. El token queda guardado solo en este navegador.</li>
+    </ol>
+    <div class="gh-campos">
+      <label>Usuario de GitHub<input id="ghUsuario" autocomplete="off"></label>
+      <label>Repositorio<input id="ghRepo" autocomplete="off" placeholder="ej. Jogopines"></label>
+      <label class="ancho">Token<input id="ghToken" type="password" autocomplete="off"></label>
+      <label>Rama<input id="ghRama" autocomplete="off"></label>
+      <label>Carpeta del sitio (vacía si index.html está en la raíz)<input id="ghCarpeta" autocomplete="off"></label>
+    </div>
+    <div class="res" id="ghRes"></div>
+    <div class="form-botones">
+      <button id="ghOlvidar" type="button">Olvidar el token</button>
+      <button id="ghCerrar" type="button">Cerrar</button>
+      <button id="ghProbarGuardar" type="button" class="principal">Probar y guardar</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlgConflicto">
+  <div class="form-art">
+    <h2>Hay una versión distinta en GitHub</h2>
+    <p id="cfTexto"></p>
+    <div class="form-botones">
+      <button id="cfCancelar" type="button">Cancelar</button>
+      <button id="cfTraer" type="button">Ver lo que hay en GitHub</button>
+      <button id="cfReemplazar" type="button" class="principal">Publicar lo mío (reemplaza)</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="articulos.js"></script>
+<script>
+// Mantiene la cinta de herramientas justo debajo de la cabecera fija.
+const topEditor = document.querySelector(".top");
+const actualizarAlturaCinta = () => document.documentElement.style.setProperty(
+  "--top-sticky-height", Math.ceil(topEditor.getBoundingClientRect().height) + "px"
+);
+actualizarAlturaCinta();
+if ("ResizeObserver" in window) new ResizeObserver(actualizarAlturaCinta).observe(topEditor);
+else window.addEventListener("resize", actualizarAlturaCinta, { passive: true });
+
+const $ = id => document.getElementById(id);
+const COLORES_BASE = { fondo: "#FBF6EE", cabecera: "#FBE9D0", acento: "#8A3B4E", p1: "#FFD9E2", p2: "#D5F0E3", p3: "#FFE9C7", p4: "#D4E6FA", p5: "#E6DCF7" };
+const COLORES_DEF = [["fondo", "Fondo de la página"], ["cabecera", "Franja de arriba"], ["acento", "Botones y precios"],
+  ["p1", "Pastel 1 (rosa)"], ["p2", "Pastel 2 (menta)"], ["p3", "Pastel 3 (durazno)"], ["p4", "Pastel 4 (celeste)"], ["p5", "Pastel 5 (lila)"]];
+const AJUSTES_BASE = {
+  negocio: "Jogopines", logo: "Fotos/logo.png", lineas: [], instagram: "", whatsapp: "", moneda: "$", mostrarMedidas: false, hojaUrl: "", carrito: true, efectoPack: "elegidos", github: { usuario: "", repo: "", rama: "main", carpeta: "" },
+  yappy: { activo: false, numero: "", nombre: "", qr: "Fotos/yappy-qr.png", texto: "Escanea el QR o envía el pago al número. Luego presiona «Ya pagué» para mandarnos tu comprobante por WhatsApp." },
+  encargo: { activo: true, cargo: 1, modo: "pieza", maximo: 10, tiempo: "", texto: "Este pin está agotado por ahora, pero lo podemos conseguir para ti con un pedido especial." },
+  broche: { activo: true, precio: 0.5, cantidad: 20, texto: "Broche trasero de mayor seguridad para evitar robos o pérdidas." },
+  colores: COLORES_BASE
+};
+
+function normalizar(d) {
+  const aj = { ...AJUSTES_BASE, ...(d.ajustes || {}) };
+  aj.broche = { ...AJUSTES_BASE.broche, ...((d.ajustes || {}).broche || {}) };
+  aj.colores = { ...COLORES_BASE, ...((d.ajustes || {}).colores || {}) };
+  aj.encargo = { ...AJUSTES_BASE.encargo, ...((d.ajustes || {}).encargo || {}) };
+  aj.yappy = { ...AJUSTES_BASE.yappy, ...((d.ajustes || {}).yappy || {}) };
+  aj.github = { ...AJUSTES_BASE.github, ...((d.ajustes || {}).github || {}) };
+  const categorias = (d.categorias || []).map(c => typeof c === "string" ? { nombre: c, emoji: "" } : { nombre: c.nombre, emoji: c.emoji || "" });
+  const articulos = (d.articulos || []).map(a => ({
+    nombre: "", categoria: categorias[0] ? categorias[0].nombre : "", precio: 0, cantidad: 1, broche: false, encargo: true, enCamino: false, piezas: [], precioPack: "", medidas: "", verMedidas: true, imagen: "", descripcion: "", ...a
+  }));
+  return { ajustes: aj, categorias, articulos };
+}
+let datos = normalizar(JSON.parse(JSON.stringify({
+  ajustes: typeof AJUSTES !== "undefined" ? AJUSTES : {},
+  categorias: typeof CATEGORIAS !== "undefined" ? CATEGORIAS : [],
+  articulos: typeof ARTICULOS !== "undefined" ? ARTICULOS : []
+})));
+
+/* ---------- Guardado ---------- */
+const soporta = false;
+let carpeta = null, conectado = false, sucio = false, ultimo = "", temporizador, tm;
+
+function articuloLimpio(a) {
+  const o = {
+    nombre: a.nombre, categoria: a.categoria, precio: a.precio, cantidad: a.cantidad, broche: !!a.broche,
+    medidas: a.medidas || "", verMedidas: a.verMedidas !== false, encargo: a.encargo !== false, enCamino: !!a.enCamino,
+    imagen: (a.imagen || "").trim(), descripcion: a.descripcion
+  };
+  if (Array.isArray(a.piezas) && a.piezas.length) {
+    o.piezas = a.piezas.map(p => {
+      const q = { nombre: p.nombre, medidas: p.medidas || "", imagen: (p.imagen || "").trim(), cantidad: p.cantidad ?? 1 };
+      if (p.precio !== "" && p.precio != null) q.precio = p.precio;
+      return q;
+    });
+    if (Number(a.precioPack) > 0) o.precioPack = Number(a.precioPack);
+  }
+  return o;
+}
+function generar() {
+  const arts = datos.articulos.map(a => "  " + JSON.stringify(articuloLimpio(a)));
+  return "// Datos del catálogo. Se genera solo desde editor.html: no hace falta editarlo a mano.\n"
+    + "const AJUSTES = " + JSON.stringify(datos.ajustes, null, 2) + ";\n\n"
+    + "const CATEGORIAS = " + JSON.stringify(datos.categorias) + ";\n\n"
+    + "const ARTICULOS = [\n" + arts.join(",\n") + "\n];\n";
+}
+function mensaje(t, mal) {
+  const m = $("mensaje"); m.textContent = t; m.className = mal ? "mal" : "ok";
+  clearTimeout(tm); tm = setTimeout(() => { m.textContent = ""; }, 9000);
+}
+function pintarEstado() {
+  $("estado").className = "ok";
+  $("estado").textContent = sucio ? "Cambios pendientes de publicar" : "Catálogo actualizado";
+}
+async function guardarEnCarpeta() {
+  try {
+    const w = await (await carpeta.getFileHandle("articulos.js", { create: true })).createWritable();
+    await w.write(generar()); await w.close();
+    sucio = false; ultimo = "guardado " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    pintarEstado(); recargarVista();
+  } catch (e) { mensaje("No se pudo guardar en la carpeta: " + e.message, true); }
+}
+function cambio() {
+  sucio = true;
+  guardarBorradorMovil();
+  if (conectado) { clearTimeout(temporizador); temporizador = setTimeout(guardarEnCarpeta, 600); }
+  pintarGH();
+}
+window.addEventListener("beforeunload", e => { if (sucio) { e.preventDefault(); e.returnValue = ""; } });
+
+
+/* Recordar la carpeta elegida (IndexedDB) */
+const BD = {
+  abrir() { return new Promise((ok, mal) => { const r = indexedDB.open("jogopines", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error); }); },
+  async leer() { const db = await this.abrir(); return new Promise(ok => { const q = db.transaction("h").objectStore("h").get("carpeta"); q.onsuccess = () => ok(q.result); q.onerror = () => ok(null); }); },
+  async guardar(h) { const db = await this.abrir(); return new Promise(ok => { const t = db.transaction("h", "readwrite"); t.objectStore("h").put(h, "carpeta"); t.oncomplete = () => ok(); t.onerror = () => ok(); }); }
+};
+
+async function alConectar() {
+  try { await carpeta.getFileHandle("index.html"); }
+  catch (e) {
+    mensaje("Esa carpeta no tiene index.html. Elige la que contiene index.html, articulos.js y Fotos.", true);
+    carpeta = null; conectado = false; pintarEstado(); return;
+  }
+  conectado = true;
+  if (sucio) { await guardarEnCarpeta(); mensaje("Tus cambios se guardaron en la carpeta."); }
+  else {
+    try {
+      const texto = await (await (await carpeta.getFileHandle("articulos.js")).getFile()).text();
+      const d = new Function(texto + "\nreturn { ajustes: typeof AJUSTES !== 'undefined' ? AJUSTES : {}, categorias: CATEGORIAS, articulos: ARTICULOS };")();
+      datos = normalizar(d); snapshot = instantanea();
+    } catch (e) { /* se queda con lo que ya estaba cargado */ }
+    renderTodo();
+  }
+  pintarEstado();
+}
+$("conectar").addEventListener("click", async () => {
+  if (!soporta) { mensaje("Este navegador no lo permite. Usa Chrome o Edge en una computadora.", true); return; }
+  try { carpeta = await showDirectoryPicker({ mode: "readwrite" }); await BD.guardar(carpeta); await alConectar(); } catch (e) { /* cancelado */ }
+});
+$("reconectar").addEventListener("click", async () => {
+  try { if ((await carpeta.requestPermission({ mode: "readwrite" })) === "granted") await alConectar(); } catch (e) {}
+});
+
+/* ---------- Vista previa ---------- */
+$("vista").addEventListener("click", () => {
+  const p = $("previa"); p.hidden = !p.hidden;
+  $("layout").classList.toggle("con-previa", !p.hidden);
+  if (!p.hidden) $("marco").src = "index.html";
+});
+function recargarVista() {
+  if ($("previa").hidden) return;
+  try { $("marco").contentWindow.location.reload(); } catch (e) { $("marco").src = "index.html"; }
+}
+
+/* ---------- Fotos ---------- */
+function limpiarNombre(n) {
+  const i = n.lastIndexOf(".");
+  const base = i > 0 ? n.slice(0, i) : n;
+  return base.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "foto";
+}
+async function reducir(file, max = 900) {
+  if (/\.avif$/i.test(file.name)) {
+    return { blob: file, ext: ".avif" };
+  }
+  const bmp = await createImageBitmap(file);
+  const f = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * f); c.height = Math.round(bmp.height * f);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const png = file.type === "image/png";   // el PNG conserva transparencia
+  const blob = await new Promise(r => c.toBlob(r, png ? "image/png" : "image/jpeg", 0.85));
+  return { blob, ext: png ? ".png" : ".jpg" };
+}
+const fotosPendientes = new Map();   // ruta -> archivo (se suben a GitHub al presionar Publicar)
+// Images stay in the folder selected by the owner; never flatten subfolders.
+function rutaFotoValida(ruta) {
+  const r=String(ruta||'').trim().replace(/\\/g,'/');
+  const p=r.split('/');
+  if(p.length<2 || p[0].toLowerCase()!=='fotos' || p.some(x=>!x || x==='.' || x==='..' || /[?#:]/.test(x))) throw new Error('Usa una ruta relativa como Fotos/Pedido-02/pin.avif.');
+  return r;
+}
+async function archivoEnRuta(ruta) {
+  const partes=rutaFotoValida(ruta).split('/'); let dir=carpeta;
+  for(const parte of partes.slice(0,-1))dir=await dir.getDirectoryHandle(parte);
+  return (await dir.getFileHandle(partes.at(-1))).getFile();
+}
+async function buscarFotos(dir,nombre,prefijo='') {
+  const halladas=[];
+  for await (const [n,h] of dir.entries()) {
+    const ruta=prefijo+n;
+    if(h.kind==='directory')halladas.push(...await buscarFotos(h,nombre,ruta+'/'));
+    else if(n===nombre)halladas.push({ruta,archivo:await h.getFile()});
+  }
+  return halladas;
+}
+async function igualesFotos(a,b) {
+  if(a.size!==b.size)return false;
+  const [x,y]=await Promise.all([a.arrayBuffer(),b.arrayBuffer()]);
+  const u=new Uint8Array(x),v=new Uint8Array(y);
+  return u.every((n,i)=>n===v[i]);
+}
+async function elegirFoto(file, alRuta) {
+  if (!file) return false;
+  if (/\.heic$/i.test(file.name) || /heic|heif/i.test(file.type)) {
+    mensaje("Elige una foto JPEG, PNG, WebP o AVIF para que se vea en todos los dispositivos.", true);
+    return false;
+  }
+  const pedido = prompt("Subcarpeta del pedido dentro de Fotos", localStorage.getItem("jogo_pedido_movil") || "Pedido 11-26");
+  if (pedido === null) return false;
+  try {
+    const nombre = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "foto.jpg";
+    const ruta = rutaFotoValida("Fotos/" + pedido.trim().replace(/^\/+|\/+$/g, "") + "/" + Date.now() + "-" + crypto.randomUUID().slice(0, 8) + "-" + nombre);
+    localStorage.setItem("jogo_pedido_movil", pedido.trim());
+    fotosPendientes.set(ruta, file);
+    alRuta(ruta);
+    cambio();
+    mensaje("Foto preparada para subir al publicar.");
+    return true;
+  } catch (error) {
+    mensaje("No se pudo preparar la foto: " + error.message, true);
+    return false;
+  }
+}
+// Rebuild pending uploads from current references, including after reopening.
+async function prepararFotosPublicacion(base,sha,pref) {
+  const arbol=await gh(`${base}/git/trees/${sha}?recursive=1`);
+  if(arbol.truncated)throw new Error('No se pudo comprobar el árbol completo del repositorio. Publica con GitHub Desktop.');
+  const remoto=new Map(arbol.tree.filter(x=>x.type==='blob').map(x=>[x.path,x.sha]));
+  const rutas=new Set([datos.ajustes.logo,datos.ajustes.yappy?.qr,...datos.articulos.flatMap(a=>[a.imagen,...(a.piezas||[]).map(p=>p.imagen)])].filter(r=>r && /^fotos[\/]/i.test(r)));
+  for(const rutaOriginal of rutas) {
+    const ruta=rutaFotoValida(rutaOriginal);
+    let archivo=fotosPendientes.get(ruta);
+    if(conectado) {
+      try { archivo=await archivoEnRuta(ruta); }
+      catch(error) { if(!archivo && !remoto.has(pref+ruta))throw new Error('Falta la foto '+ruta+'. Revisa su ruta antes de publicar.'); }
+    }
+    if(!archivo) {
+      if(!remoto.has(pref+ruta))throw new Error('Conecta la carpeta o vuelve a seleccionar '+ruta+' para poder subirla.');
+      continue;
+    }
+    const bytes=new Uint8Array(await archivo.arrayBuffer());
+    const cabecera=new TextEncoder().encode('blob '+bytes.length+'\0');
+    const blob=new Uint8Array(cabecera.length+bytes.length);blob.set(cabecera);blob.set(bytes,cabecera.length);
+    const shaLocal=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1',blob)),b=>b.toString(16).padStart(2,'0')).join('');
+    if(remoto.get(pref+ruta)!==shaLocal)fotosPendientes.set(ruta,archivo);
+    else fotosPendientes.delete(ruta);
+  }
+}
+
+/* ---------- Piezas de interfaz ---------- */
+function campo(obj, clave, o = {}) {
+  const i = document.createElement("input");
+  i.type = o.tipo || "text";
+  if (o.clase) i.className = o.clase;
+  if (i.type === "number") { i.min = 0; i.step = o.paso || 1; }
+  i.value = obj[clave] ?? "";
+  i.addEventListener("input", () => {
+    obj[clave] = i.type === "number" ? Number(i.value || 0) : i.value;
+    if (o.alCambiar) o.alCambiar(i.value);
+    if (!o.local) cambio();
+  });
+  return i;
+}
+let medChkRef = null;
+function fijarMedidas(v) {
+  datos.ajustes.mostrarMedidas = v;
+  $("medTop").checked = v;
+  if (medChkRef) medChkRef.checked = v;
+  $("tablaArt").classList.toggle("sin-medidas", !v);
+}
+$("detectar").addEventListener("click", () => {
+  const conv = [], dudosos = [];
+  datos.articulos.forEach(a => {
+    if (Array.isArray(a.piezas) && a.piezas.length) return;
+    const ps = parsePiezas(a.medidas || "").filter(p => p.medidas);
+    if (ps.length < 2) return;
+    const n = Number(a.cantidad);
+    if (n === ps.length || n === 0) { a.piezas = ps.map(p => ({ ...p, imagen: "", cantidad: n === 0 ? 0 : 1 })); conv.push(a.nombre); }
+    else dudosos.push(`${a.nombre} (${ps.length} piezas, cantidad ${n})`);
+  });
+  if (conv.length) { cambio(); renderArticulos(); }
+  mensaje(`Packs convertidos: ${conv.length}.` + (dudosos.length ? ` Revisa a mano (✏️ → Piezas → «Crear piezas desde el campo Medidas»): ${dudosos.join("; ")}.` : ""), dudosos.length > 0);
+});
+$("medTop").addEventListener("change", () => { fijarMedidas($("medTop").checked); cambio(); });
+function tdMedidas(a) {
+  const i = campo(a, "medidas"); i.placeholder = "ej. 3 × 2.5 cm";
+  const v = document.createElement("input"); v.type = "checkbox"; v.checked = a.verMedidas !== false; v.title = "Mostrar las medidas de este pin";
+  v.addEventListener("change", () => { a.verMedidas = v.checked; cambio(); });
+  const check = document.createElement("div"); check.className = "chk-celda"; check.append(v);
+  const cont = document.createElement("div"); cont.className = "medidas-control"; cont.append(check, i);
+  const td = celda(cont); td.className = "medidas"; return td;
+}
+function celda(...hijos) { const td = document.createElement("td"); td.append(...hijos); return td; }
+function miniatura(ruta, titulo) {
+  const i = document.createElement("img"); i.className = "mini"; i.alt = "";
+  i.onerror = () => { i.classList.add("rota"); i.title = "No se encuentra esta foto: elígela de nuevo con 📁"; };
+  i.poner = r => { i.classList.remove("rota"); i.title = r ? "Clic para ver la foto grande" : ""; i.hidden = !r; if (r) i.src = fotosPendientes.has(r) ? URL.createObjectURL(fotosPendientes.get(r)) : r; else i.removeAttribute("src"); };
+  i.addEventListener("click", () => { if (!i.classList.contains("rota") && i.getAttribute("src")) abrirLightbox(i.src, titulo ? titulo() : ""); });
+  i.poner((ruta || "").trim());
+  return i;
+}
+function abrirLightbox(src, titulo) { $("lbImg").src = src; $("lbTit").textContent = titulo || ""; $("lightbox").showModal(); }
+$("lightbox").addEventListener("click", () => $("lightbox").close());
+function campoFoto(obj, clave, local) {
+  const txt = campo(obj, clave, { local, alCambiar: v => mini.poner(v.trim()) });
+  txt.placeholder = "Fotos/Pedido-02/nombre.avif";
+  const mini = miniatura(obj[clave], () => obj.nombre || obj.titulo || "");
+  const lbl = document.createElement("label"); lbl.textContent = "📁"; lbl.title = "Elegir foto de tu computadora";
+  const arch = document.createElement("input"); arch.type = "file"; arch.accept = "image/*"; arch.hidden = true;
+  arch.addEventListener("change", async () => {
+    await elegirFoto(arch.files[0], ruta => { obj[clave] = ruta; txt.value = ruta; mini.poner(ruta); if (!local) cambio(); });
+    arch.value = "";
+  });
+  lbl.appendChild(arch);
+  const campoDiv = document.createElement("div"); campoDiv.className = "foto-campo";
+  const fila2 = document.createElement("div"); fila2.append(txt, lbl); campoDiv.append(fila2);
+  const cont = document.createElement("div"); cont.className = "foto-celda"; cont.append(mini, campoDiv);
+  return cont;
+}
+const emojiCat = n => (datos.categorias.find(c => c.nombre === n) || {}).emoji || "";
+
+/* ---------- Un emoji por categoría (lista corta) ---------- */
+const EMOJIS = ["🎵 Música", "🌸 Anime", "🎮 Videojuegos", "📺 Series y TV", "🎬 Películas", "🐱 Animales", "🍓 Comida y dulces", "🌙 Cielo y naturaleza", "🧸 Peluches y ternura", "⭐ Estrellas", "✨ Otros", "📌 General"];
+function selEmoji(valor, alCambiar) {
+  const s = document.createElement("select"); s.className = "emoji-sel";
+  let actual = valor || "📌";
+  const conocidos = EMOJIS.map(t => t.split(" ")[0]);
+  const poner = () => {
+    s.innerHTML = "";
+    if (!conocidos.includes(actual)) { const o = document.createElement("option"); o.value = actual; o.textContent = actual + " (personalizado)"; s.appendChild(o); }
+    EMOJIS.forEach(t => { const o = document.createElement("option"); o.value = t.split(" ")[0]; o.textContent = t; s.appendChild(o); });
+    const ot = document.createElement("option"); ot.value = "__otro"; ot.textContent = "✏️ Escribir otro emoji…"; s.appendChild(ot);
+    s.value = actual;
+  };
+  poner();
+  s.addEventListener("change", () => {
+    if (s.value === "__otro") {
+      const t = (prompt("Pega o escribe el emoji que quieres usar:") || "").trim();
+      if (t) actual = t;
+    } else actual = s.value;
+    poner(); alCambiar(actual);
+  });
+  return s;
+}
+
+
+/* ---------- Pestaña Artículos ---------- */
+function cantidadCampo(a, marcar) {
+  const i = campo(a, "cantidad", { tipo: "number", clase: "num", alCambiar: marcar });
+  if (Array.isArray(a.piezas) && a.piezas.length) {
+    i.disabled = true;
+    i.value = a.piezas.reduce((s, p) => s + Math.max(0, Number(p.cantidad ?? 1) || 0), 0);
+    i.title = "Este pack calcula su cantidad con sus piezas (✏️ → Piezas del pack)";
+  }
+  return i;
+}
+function escH(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+let catFiltro = "";                 // "" = todas las categorías
+const cerrados = new Set();         // categorías con el grupo plegado
+const seleccionados = new Set();
+let visiblesActuales = [];
+
+function actualizarBarraSeleccion() {
+  const vigentes = [...seleccionados].filter(a => datos.articulos.includes(a));
+  seleccionados.clear();
+  vigentes.forEach(a => seleccionados.add(a));
+  const n = vigentes.length;
+  $("seleccionConteo").textContent = `${n} artículo${n === 1 ? "" : "s"} seleccionado${n === 1 ? "" : "s"}`;
+  $("limpiarSeleccion").disabled = n === 0;
+  $("marcarCamino").disabled = !vigentes.some(a => !a.enCamino);
+  $("quitarCamino").disabled = !vigentes.some(a => !!a.enCamino);
+  const cab = $("selTodosArt");
+  const marcados = visiblesActuales.filter(a => seleccionados.has(a)).length;
+  cab.checked = visiblesActuales.length > 0 && marcados === visiblesActuales.length;
+  cab.indeterminate = marcados > 0 && marcados < visiblesActuales.length;
+  cab.disabled = visiblesActuales.length === 0;
+}
+
+function aplicarMarcaCamino(valor) {
+  const afectados = [...seleccionados].filter(a => datos.articulos.includes(a) && !!a.enCamino !== valor);
+  if (!afectados.length) return;
+  afectados.forEach(a => { a.enCamino = valor; });
+  cambio();
+  renderArticulos();
+  mensaje(valor
+    ? `${afectados.length} artículo${afectados.length === 1 ? "" : "s"} marcado${afectados.length === 1 ? "" : "s"} como «Viene en camino».`
+    : `Se quitó la marca de «Viene en camino» en ${afectados.length} artículo${afectados.length === 1 ? "" : "s"}.`);
+}
+
+$("selTodosArt").addEventListener("change", () => {
+  visiblesActuales.forEach(a => {
+    if ($("selTodosArt").checked) seleccionados.add(a);
+    else seleccionados.delete(a);
+  });
+  actualizarBarraSeleccion();
+});
+$("marcarCamino").addEventListener("click", () => aplicarMarcaCamino(true));
+$("quitarCamino").addEventListener("click", () => aplicarMarcaCamino(false));
+$("limpiarSeleccion").addEventListener("click", () => {
+  seleccionados.clear();
+  actualizarBarraSeleccion();
+});
+
+function pintarChips() {
+  const cont = $("chips"); cont.innerHTML = "";
+  const cuenta = {}; datos.articulos.forEach(a => { cuenta[a.categoria] = (cuenta[a.categoria] || 0) + 1; });
+  const crear = (clave, texto, n) => {
+    const b = document.createElement("button"); b.type = "button";
+    b.className = "chip" + (catFiltro === clave ? " activo" : "");
+    b.innerHTML = `${escH(texto)}<small>${n}</small>`;
+    b.addEventListener("click", () => { catFiltro = clave; seleccionados.clear(); renderArticulos(); });
+    cont.appendChild(b);
+  };
+  crear("", "Todas", datos.articulos.length);
+  datos.categorias.forEach(c => crear(c.nombre, (c.emoji ? c.emoji + " " : "") + c.nombre, cuenta[c.nombre] || 0));
+  Object.keys(cuenta).filter(k => !datos.categorias.some(c => c.nombre === k)).forEach(k => crear(k, k + " (fuera de la lista)", cuenta[k]));
+}
+
+function crearFila(a) {
+  const tr = document.createElement("tr");
+  const stockFila = () => Array.isArray(a.piezas) && a.piezas.length
+    ? a.piezas.reduce((s, p) => s + Math.max(0, Number(p.cantidad ?? 1) || 0), 0)
+    : Math.max(0, Number(a.cantidad) || 0);
+  const marcar = () => {
+    const stock = stockFila();
+    tr.classList.toggle("agotado", stock <= 0 && !a.enCamino);
+    tr.classList.toggle("fila-camino", stock <= 0 && !!a.enCamino);
+  };
+
+  const chkSel = document.createElement("input");
+  chkSel.type = "checkbox"; chkSel.className = "chk-seleccion";
+  chkSel.checked = seleccionados.has(a); chkSel.title = "Seleccionar este artículo";
+  chkSel.addEventListener("change", () => {
+    if (chkSel.checked) seleccionados.add(a); else seleccionados.delete(a);
+    actualizarBarraSeleccion();
+  });
+
+  const sel = document.createElement("select");
+  const nombres = datos.categorias.map(c => c.nombre);
+  (nombres.includes(a.categoria) ? nombres : [...nombres, a.categoria]).forEach(c => {
+    const o = document.createElement("option"); o.value = c;
+    o.textContent = nombres.includes(c) ? c : c + " (no está en la lista)";
+    o.selected = c === a.categoria; sel.appendChild(o);
+  });
+  sel.addEventListener("change", () => { a.categoria = sel.value; cambio(); renderArticulos(); });
+
+  const camino = document.createElement("input");
+  camino.type = "checkbox"; camino.className = "chk-camino"; camino.checked = !!a.enCamino;
+  camino.title = "Marcar si este artículo viene en camino";
+  camino.addEventListener("change", () => { a.enCamino = camino.checked; marcar(); cambio(); actualizarBarraSeleccion(); });
+
+  const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = !!a.broche; chk.title = "Ofrece broche de seguridad";
+  chk.addEventListener("change", () => { a.broche = chk.checked; cambio(); });
+  const cc = document.createElement("div"); cc.className = "chk-celda"; cc.appendChild(chk);
+
+  const x = document.createElement("button"); x.className = "x quitar-fila"; x.textContent = "✕"; x.title = "Quitar artículo";
+  x.addEventListener("click", () => {
+    if (confirm(`¿Quitar "${a.nombre || "artículo sin nombre"}"?`)) {
+      datos.articulos = datos.articulos.filter(o => o !== a);
+      seleccionados.delete(a);
+      cambio(); renderArticulos();
+    }
+  });
+
+  const esPack = Array.isArray(a.piezas) && a.piezas.length;
+  const ed = document.createElement("button"); ed.className = "x editar-fila"; ed.textContent = esPack ? "✏️ 📦" + a.piezas.length : "✏️";
+  ed.title = esPack ? `Editar pack (${a.piezas.length} piezas)` : "Editar con el formulario completo";
+  ed.addEventListener("click", () => abrirFormulario(a));
+  const acciones = document.createElement("div"); acciones.className = "acciones-fila"; acciones.append(ed, x);
+
+  const caminoCont = document.createElement("div"); caminoCont.className = "chk-celda"; caminoCont.append(camino);
+
+  tr.append(
+    celda(chkSel), celda(campo(a, "nombre")), celda(sel),
+    celda(campo(a, "precio", { tipo: "number", paso: "0.01", clase: "num" })),
+    celda(cantidadCampo(a, marcar)), celda(caminoCont),
+    celda(cc), tdMedidas(a), celda(campoFoto(a, "imagen")), celda(campo(a, "descripcion")), celda(acciones)
+  );
+  marcar();
+  return tr;
+}
+
+function renderArticulos() {
+  $("avisoHoja").hidden = !datos.ajustes.hojaUrl;
+  $("medTop").checked = !!datos.ajustes.mostrarMedidas;
+  $("tablaArt").classList.toggle("sin-medidas", !datos.ajustes.mostrarMedidas);
+  const q = $("buscar").value.trim().toLowerCase();
+  pintarChips();
+
+  const filas = $("filas"); filas.innerHTML = "";
+  visiblesActuales = [];
+  const grupos = new Map();
+  datos.articulos.forEach(a => { if (!grupos.has(a.categoria)) grupos.set(a.categoria, []); grupos.get(a.categoria).push(a); });
+  const orden = datos.categorias.map(c => c.nombre);
+  const claves = [...orden.filter(c => grupos.has(c)), ...[...grupos.keys()].filter(c => !orden.includes(c))];
+  let n = 0;
+  claves.forEach(cat => {
+    if (catFiltro && cat !== catFiltro) return;
+    const lista = grupos.get(cat).filter(a => !q || (a.nombre || "").toLowerCase().includes(q));
+    if (!lista.length) return;
+    n += lista.length;
+    const cerrado = cerrados.has(cat) && !q;          // al buscar, se abren todos los grupos
+    const info = datos.categorias.find(c => c.nombre === cat);
+    const cab = document.createElement("tr"); cab.className = "grupo-fila";
+    cab.innerHTML = `<td colspan="11"><button type="button" class="grupo-btn">${cerrado ? "▸" : "▾"} ${info && info.emoji ? escH(info.emoji) : ""} <b>${escH(cat)}</b> <span>${lista.length} artículo${lista.length === 1 ? "" : "s"}</span></button></td>`;
+    cab.querySelector("button").addEventListener("click", () => { if (cerrados.has(cat)) cerrados.delete(cat); else cerrados.add(cat); renderArticulos(); });
+    filas.appendChild(cab);
+    if (!cerrado) lista.forEach(a => { visiblesActuales.push(a); filas.appendChild(crearFila(a)); });
+  });
+  $("conteo").textContent = `${n} de ${datos.articulos.length} artículos`;
+  actualizarBarraSeleccion();
+}
+$("buscar").addEventListener("input", () => { seleccionados.clear(); renderArticulos(); });
+const tamGuardado = (() => { try { return localStorage.getItem("jogopines_tam_fotos"); } catch (er) { return null; } })();
+if (tamGuardado && ["s", "m", "l", "xl"].includes(tamGuardado)) { $("tamFotos").value = tamGuardado; $("tablaArt").dataset.fotos = tamGuardado; }
+$("tamFotos").addEventListener("change", () => {
+  $("tablaArt").dataset.fotos = $("tamFotos").value;
+  try { localStorage.setItem("jogopines_tam_fotos", $("tamFotos").value); } catch (er) {}
+});
+$("agregar").addEventListener("click", () => abrirFormulario(null));
+
+/* ---------- Formulario para agregar / editar un artículo ---------- */
+let editando = null, fArchivo = null, ultimaCat = "", fPz = [];
+function abrirFormulario(item) {
+  editando = item; fArchivo = null;
+  $("formTitulo").textContent = item ? "Editar artículo" : "Agregar artículo";
+  $("fOtro").hidden = !!item;
+  $("fGuardar").textContent = item ? "Guardar cambios" : "Guardar artículo";
+  $("fError").textContent = "";
+  const nombres = datos.categorias.map(c => c.nombre);
+  const cat = item ? item.categoria : (nombres.includes(ultimaCat) ? ultimaCat : (nombres[0] || ""));
+  $("fCat").innerHTML = "";
+  (nombres.includes(cat) || !cat ? nombres : [...nombres, cat]).forEach(n => {
+    const o = document.createElement("option"); o.value = n;
+    o.textContent = (emojiCat(n) ? emojiCat(n) + " " : "") + n; $("fCat").appendChild(o);
+  });
+  $("fCat").value = cat;
+  $("fNombre").value = item ? item.nombre : "";
+  $("fPrecio").value = item ? item.precio : "";
+  $("fCantidad").value = item ? item.cantidad : 1;
+  $("fDesc").value = item ? item.descripcion : "";
+  $("fMedidas").value = item ? item.medidas : "";
+  $("fVerMedidas").checked = item ? item.verMedidas !== false : true;
+  $("fBroche").checked = item ? !!item.broche : true;
+  $("fEncargo").checked = item ? item.encargo !== false : true;
+  $("fEnCamino").checked = item ? !!item.enCamino : false;
+  fPz = item && Array.isArray(item.piezas) ? item.piezas.map(p => ({ ...p })) : [];
+  $("fPrecioPack").value = item && item.precioPack ? item.precioPack : "";
+  $("fPegar").value = "";
+  $("fPiezasBox").open = fPz.length > 0;
+  renderPiezasForm();
+  const prev = $("fPrev"); prev.textContent = "📷";
+  if (item && item.imagen) {
+    const i = new Image(); i.onerror = () => { prev.textContent = "⚠️"; };
+    i.src = fotosPendientes.has(item.imagen) ? URL.createObjectURL(fotosPendientes.get(item.imagen)) : item.imagen; prev.textContent = ""; prev.appendChild(i);
+  }
+  $("fFotoNombre").textContent = item && item.imagen ? item.imagen : "";
+  if (!$("formArt").open) $("formArt").showModal();
+  $("fNombre").focus();
+}
+function parsePiezas(texto) {
+  const re = /\s*([^:\n]+?)\s*[:\-–]\s*(\d+(?:[.,]\d+)?\s*[×xX]\s*\d+(?:[.,]\d+)?\s*cm)/g;
+  const out = []; let m;
+  while ((m = re.exec(texto)) !== null) out.push({ nombre: m[1].trim(), medidas: m[2].trim() });
+  if (out.length) return out;
+  return texto.split("\n").map(s => s.trim()).filter(Boolean).map(l => {
+    const k = l.match(/^(.+?)\s*[:\-–]\s*(\d.*)$/);
+    return { nombre: (k ? k[1] : l).trim(), medidas: k ? k[2].trim() : "" };
+  });
+}
+function sincCantidadForm() {
+  const hay = fPz.length > 0;
+  $("fCantidad").disabled = hay;
+  if (hay) $("fCantidad").value = fPz.reduce((s, p) => s + Math.max(0, Number(p.cantidad ?? 1) || 0), 0);
+}
+function renderPiezasForm() {
+  const cont = $("fPiezas"); cont.innerHTML = "";
+  if (fPz.length) {
+    const h = document.createElement("div"); h.className = "pz-fila pz-cab";
+    h.innerHTML = "<span>Nombre</span><span>Medidas</span><span>Precio</span><span>Cant.</span><span>Foto (opcional)</span><span></span>";
+    cont.appendChild(h);
+  }
+  fPz.forEach((p, i) => {
+    const fila = document.createElement("div"); fila.className = "pz-fila";
+    const nom = campo(p, "nombre", { local: true }); nom.placeholder = "Pin " + (i + 1);
+    const med = campo(p, "medidas", { local: true }); med.placeholder = "ej. 3 × 3.2 cm";
+    const pre = document.createElement("input"); pre.type = "number"; pre.min = 0; pre.step = "0.01"; pre.placeholder = "= pin"; pre.value = p.precio ?? "";
+    pre.addEventListener("input", () => { p.precio = pre.value.trim() === "" ? "" : Number(pre.value); });
+    const can = campo(p, "cantidad", { tipo: "number", local: true, alCambiar: sincCantidadForm });
+    const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "✕"; x.title = "Quitar pieza";
+    x.addEventListener("click", () => { fPz.splice(i, 1); renderPiezasForm(); });
+    fila.append(nom, med, pre, can, campoFoto(p, "imagen", true), x);
+    cont.appendChild(fila);
+  });
+  sincCantidadForm();
+}
+$("fAddPieza").addEventListener("click", () => {
+  fPz.push({ nombre: "", medidas: "", imagen: "", precio: "", cantidad: 1 });
+  $("fPiezasBox").open = true; renderPiezasForm();
+  const filas = $("fPiezas").querySelectorAll(".pz-fila:not(.pz-cab)");
+  const campo1 = filas[filas.length - 1].querySelector("input"); campo1.focus(); campo1.select();
+});
+$("fCrearN").addEventListener("click", () => {
+  const n = Math.min(60, Math.max(1, Math.floor(Number($("fNPiezas").value) || 0)));
+  for (let k = 0; k < n; k++) fPz.push({ nombre: "", medidas: "", imagen: "", precio: "", cantidad: 1 });
+  $("fPiezasBox").open = true; renderPiezasForm();
+});
+$("fCrearPiezas").addEventListener("click", () => {
+  parsePiezas($("fPegar").value).forEach(p => fPz.push({ ...p, imagen: "", precio: "", cantidad: 1 }));
+  $("fPegar").value = ""; renderPiezasForm();
+});
+$("fFoto").addEventListener("change", () => {
+  fArchivo = $("fFoto").files[0] || null;
+  if (!fArchivo) return;
+  const prev = $("fPrev"); prev.textContent = "";
+  const i = new Image(); i.src = URL.createObjectURL(fArchivo); prev.appendChild(i);
+  $("fFotoNombre").textContent = fArchivo.name;
+  $("fFoto").value = "";
+});
+async function guardarFormulario(otro) {
+  const nombre = $("fNombre").value.trim();
+  if (!nombre) { $("fError").textContent = "Escribe el nombre del artículo."; $("fNombre").focus(); return; }
+  if (!$("fCat").value) { $("fError").textContent = "Elige una categoría (si no hay, créala en la pestaña Categorías)."; return; }
+  const nombresPz = fPz.map((p, k) => (p.nombre || "").trim() || "Pin " + (k + 1));
+  const vistos = new Set(), repetidos = [];
+  nombresPz.forEach(n => { const k = normTxt(n); if (vistos.has(k)) repetidos.push(n); vistos.add(k); });
+  if (repetidos.length) { $("fError").textContent = "Hay piezas con el mismo nombre: " + [...new Set(repetidos)].join(", ") + ". Cada pin del pack debe llamarse distinto."; return; }
+  const botones = [$("fGuardar"), $("fOtro"), $("fCancelar")];
+  botones.forEach(b => { b.disabled = true; });
+  try {
+    const a = editando || { imagen: "" };
+    Object.assign(a, {
+      nombre, categoria: $("fCat").value,
+      precio: Math.max(0, Number($("fPrecio").value || 0)),
+      cantidad: Math.max(0, Math.floor(Number($("fCantidad").value || 0))),
+      descripcion: $("fDesc").value.trim(), medidas: $("fMedidas").value.trim(),
+      verMedidas: $("fVerMedidas").checked, broche: $("fBroche").checked, encargo: $("fEncargo").checked,
+      enCamino: $("fEnCamino").checked
+    });
+    const pz = fPz.map((p, k) => {
+      const q = { nombre: nombresPz[k], medidas: (p.medidas || "").trim(), imagen: (p.imagen || "").trim(), cantidad: Math.max(0, Math.floor(Number(p.cantidad ?? 1) || 0)) };
+      if (p.precio !== "" && p.precio != null) q.precio = Number(p.precio);
+      return q;
+    });
+    a.piezas = pz;
+    a.precioPack = pz.length && Number($("fPrecioPack").value) > 0 ? Number($("fPrecioPack").value) : "";
+    if (pz.length) a.cantidad = pz.reduce((s, p) => s + p.cantidad, 0);
+    if (fArchivo && !await elegirFoto(fArchivo, ruta => { a.imagen = ruta; })) { $("fError").textContent="No se guardó: revisa la ubicación de la foto."; return; }
+    if (!editando) datos.articulos.unshift(a);
+    ultimaCat = a.categoria;
+    $("buscar").value = ""; catFiltro = ""; cerrados.delete(a.categoria);
+    cambio(); renderArticulos();
+    if (otro && !editando) { mensaje("Agregado: " + nombre); abrirFormulario(null); }
+    else $("formArt").close();
+  } finally { botones.forEach(b => { b.disabled = false; }); }
+}
+$("fGuardar").addEventListener("click", () => guardarFormulario(false));
+$("fOtro").addEventListener("click", () => guardarFormulario(true));
+$("fCancelar").addEventListener("click", () => $("formArt").close());
+
+/* ---------- Pestaña Categorías ---------- */
+function renderCategorias() {
+  const cont = $("cats"); cont.innerHTML = "";
+  datos.categorias.forEach(c => {
+    const fila = document.createElement("div"); fila.className = "fila-cat";
+    const em = selEmoji(c.emoji, v => { c.emoji = v; cambio(); });
+    const nom = document.createElement("input"); nom.value = c.nombre;
+    nom.addEventListener("input", () => {
+      const viejo = c.nombre; c.nombre = nom.value;
+      datos.articulos.forEach(a => { if (a.categoria === viejo) a.categoria = c.nombre; });
+      cambio();
+    });
+    nom.addEventListener("change", renderArticulos);
+    const x = document.createElement("button"); x.className = "x"; x.textContent = "✕"; x.title = "Quitar categoría";
+    x.addEventListener("click", () => {
+      if (confirm(`¿Quitar la categoría "${c.nombre}"? Sus artículos se quedarán marcados como "no está en la lista" hasta que les asignes otra.`)) {
+        datos.categorias = datos.categorias.filter(o => o !== c); cambio(); renderCategorias(); renderArticulos();
+      }
+    });
+    fila.append(em, nom, x); cont.appendChild(fila);
+  });
+}
+$("agregarCat").addEventListener("click", () => { datos.categorias.push({ nombre: "Nueva categoría", emoji: "✨" }); cambio(); renderCategorias(); renderArticulos(); });
+
+/* ---------- Pestaña Negocio y contacto ---------- */
+function fila(etiqueta, el, nota) {
+  const d = document.createElement("div"); d.className = "campo";
+  const l = document.createElement("label"); l.textContent = etiqueta;
+  d.append(l, el);
+  if (nota) { const n = document.createElement("div"); n.className = "nota"; n.textContent = nota; d.appendChild(n); }
+  return d;
+}
+function renderAjustes() {
+  const a = datos.ajustes, c = $("ajustes"); c.innerHTML = "";
+
+  const lineas = document.createElement("textarea"); lineas.rows = 4; lineas.value = (a.lineas || []).join("\n");
+  lineas.addEventListener("input", () => { a.lineas = lineas.value.split("\n").map(s => s.trim()).filter(Boolean); cambio(); });
+
+  const wa = campo(a, "whatsapp");
+  wa.addEventListener("change", () => { a.whatsapp = wa.value.replace(/\D/g, ""); wa.value = a.whatsapp; cambio(); });
+
+  const bro = document.createElement("div");
+  const act = document.createElement("input"); act.type = "checkbox"; act.checked = !!a.broche.activo;
+  act.addEventListener("change", () => { a.broche.activo = act.checked; cambio(); });
+  const lblAct = document.createElement("label"); lblAct.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:8px";
+  lblAct.append(act, "Ofrecer broche de seguridad");
+  bro.append(lblAct,
+    fila("Precio extra (por pieza)", campo(a.broche, "precio", { tipo: "number", paso: "0.01", clase: "num" }), "Pon 0 si no lo cobras aparte."),
+    fila("Broches disponibles", campo(a.broche, "cantidad", { tipo: "number", clase: "num" }), "Cuántos broches tienes. El cliente lo ve en la opción del broche. Si vendes broches por fuera, actualiza este número. Con 0 aparece «Agotados por ahora»."),
+    fila("Descripción", campo(a.broche, "texto")));
+
+  const encBox = document.createElement("div");
+  const encAct = document.createElement("input"); encAct.type = "checkbox"; encAct.checked = !!a.encargo.activo;
+  encAct.addEventListener("change", () => { a.encargo.activo = encAct.checked; cambio(); });
+  const encLbl = document.createElement("label"); encLbl.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:8px";
+  encLbl.append(encAct, "Permitir pedidos especiales de pines agotados");
+  const modo = document.createElement("select");
+  [["pieza", "Por cada pieza"], ["pedido", "Una sola vez por pedido"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; modo.appendChild(o); });
+  modo.value = a.encargo.modo === "pedido" ? "pedido" : "pieza";
+  modo.addEventListener("change", () => { a.encargo.modo = modo.value; cambio(); });
+  encBox.append(encLbl,
+    fila("Cargo adicional", campo(a.encargo, "cargo", { tipo: "number", paso: "0.01", clase: "num" }), "Lo que cobras de más por conseguirlo. Se suma al precio del pin."),
+    fila("Cómo se cobra", modo, "Por cada pieza: el cargo se multiplica por la cantidad. Una sola vez: se cobra una vez por todo el pedido."),
+    fila("Máximo de piezas", campo(a.encargo, "maximo", { tipo: "number", clase: "num" }), "Cuántas piezas puede encargar el cliente de una vez."),
+    fila("Tiempo estimado", campo(a.encargo, "tiempo"), "Opcional. Ej.: 2 a 3 semanas. Vacío = no se muestra."),
+    fila("Mensaje al cliente", campo(a.encargo, "texto")));
+
+  const hojaIn = campo(a, "hojaUrl"); hojaIn.placeholder = "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv";
+  const hojaBtn = document.createElement("button"); hojaBtn.textContent = "🔎 Probar enlace"; hojaBtn.style.marginTop = "8px";
+  const hojaRes = document.createElement("div"); hojaRes.className = "res";
+  hojaBtn.addEventListener("click", () => {
+    if (!(a.hojaUrl || "").trim()) { hojaRes.className = "res mal"; hojaRes.textContent = "Pega primero el enlace de la hoja."; return; }
+    probarHoja(a.hojaUrl.trim(), hojaRes);
+  });
+  const hojaBox = document.createElement("div"); hojaBox.append(hojaIn, hojaBtn, hojaRes);
+
+  const carChk = document.createElement("input"); carChk.type = "checkbox"; carChk.checked = a.carrito !== false;
+  carChk.addEventListener("change", () => { a.carrito = carChk.checked; cambio(); });
+  const carLbl = document.createElement("label"); carLbl.style.cssText = "display:flex;gap:8px;align-items:center";
+  carLbl.append(carChk, "Mostrar el carrito de compras en el catálogo");
+
+  const efecto = document.createElement("select");
+  [["elegidos", "Desenfocar el pin elegido (con palomita)"], ["otros", "Desenfocar los que NO están elegidos"], ["ninguno", "Sin desenfoque"]]
+    .forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; efecto.appendChild(o); });
+  efecto.value = a.efectoPack || "elegidos";
+  efecto.addEventListener("change", () => { a.efectoPack = efecto.value; cambio(); });
+
+  const yBox = document.createElement("div");
+  const yAct = document.createElement("input"); yAct.type = "checkbox"; yAct.checked = !!a.yappy.activo;
+  yAct.addEventListener("change", () => { a.yappy.activo = yAct.checked; cambio(); });
+  const yLbl = document.createElement("label"); yLbl.style.cssText = "display:flex;gap:8px;align-items:center;margin-bottom:8px";
+  yLbl.append(yAct, "Mostrar la opción «Pagar con Yappy» (arriba, en el carrito y en cada pin)");
+  yBox.append(yLbl,
+    fila("Número de Yappy", campo(a.yappy, "numero"), "Tal como quieres que lo vea el cliente."),
+    fila("Nombre del perfil", campo(a.yappy, "nombre"), "Opcional (ej. Jogopines)."),
+    fila("QR de tu perfil", campoFoto(a.yappy, "qr"), "Guarda la imagen del QR en la carpeta Fotos y elígela con 📁. Mientras falte, el cliente verá «QR pendiente»."),
+    fila("Instrucciones", campo(a.yappy, "texto")));
+
+  const ghBox = document.createElement("div");
+  const tokIn = document.createElement("input"); tokIn.type = "password"; tokIn.autocomplete = "off";
+  const marcarTok = () => { tokIn.placeholder = ghToken() ? "•••••••• (guardado en este dispositivo)" : "Pega aquí tu token"; };
+  marcarTok();
+  tokIn.addEventListener("change", () => { const t = tokIn.value.trim(); if (t) { ghGuardarToken(t); tokIn.value = ""; marcarTok(); mensaje("Token guardado solo en este dispositivo."); } });
+  const ghRes = document.createElement("div"); ghRes.className = "res";
+  const bProb = document.createElement("button"); bProb.textContent = "🔎 Probar conexión"; bProb.style.marginTop = "8px";
+  bProb.addEventListener("click", () => ghProbar(ghRes));
+  const bOlv = document.createElement("button"); bOlv.textContent = "Olvidar el token de este dispositivo"; bOlv.style.cssText = "margin:8px 0 0 8px";
+  bOlv.addEventListener("click", () => { ghGuardarToken(""); marcarTok(); ghRes.className = "res"; ghRes.textContent = "Token borrado de este dispositivo."; });
+  ghBox.append(
+    fila("Usuario de GitHub", campo(a.github, "usuario"), "Tu nombre de cuenta (es la primera parte de la dirección de tu sitio: usuario.github.io)."),
+    fila("Repositorio", campo(a.github, "repo"), "El nombre del repositorio de tu sitio (ej. Jogopines)."),
+    fila("Rama", campo(a.github, "rama"), "Casi siempre «main»."),
+    fila("Carpeta del sitio", campo(a.github, "carpeta"), "Déjala vacía si index.html está en la raíz del repositorio."),
+    fila("Token de acceso", tokIn, "Se guarda SOLO en este navegador (nunca en articulos.js ni en GitHub). Debe tener permiso «Contents: Read and write» solo sobre este repositorio."),
+    bProb, bOlv, ghRes);
+
+  const medChk = document.createElement("input"); medChk.type = "checkbox"; medChk.checked = !!a.mostrarMedidas;
+  medChkRef = medChk;
+  medChk.addEventListener("change", () => { fijarMedidas(medChk.checked); cambio(); });
+  const medLbl = document.createElement("label"); medLbl.style.cssText = "display:flex;gap:8px;align-items:center";
+  medLbl.append(medChk, "Mostrar las medidas en el catálogo");
+
+  c.append(
+    fila("Nombre del negocio", campo(a, "negocio")),
+    fila("Logo", campoFoto(a, "logo"), "Elige tu imagen con 📁. Si no se encuentra, el catálogo usa el logo de respaldo que lleva incluido."),
+    fila("Líneas de la cabecera", lineas, "Una por renglón. La primera se ve más grande."),
+    fila("Enlace de Instagram", campo(a, "instagram"), "Pega el enlace completo de tu perfil. Vacío = se oculta el botón."),
+    fila("WhatsApp", wa, "Con código de país, ej. +507 6605-7804 (se guarda solo con números). Vacío = se ocultan WhatsApp y el botón Pedir."),
+    fila("Símbolo de moneda", campo(a, "moneda", { clase: "num" })),
+    fila("Broche de seguridad", bro, "Para que salga en un artículo, marca su casilla «Broche» en la pestaña Artículos."),
+    fila("Medidas de los pines", medLbl, "Escribe las medidas en la columna «Medidas» de cada artículo. Si desmarcas esta casilla no se muestran, pero se conservan por si luego las quieres."),
+    fila("Pedidos especiales (agotados)", encBox, "Cuando un pin está agotado, el cliente puede encargarlo: paga el precio del pin más el cargo adicional. Para excluir un artículo, desmarca «Permitir pedido especial» en su formulario (✏️)."),
+    fila("Inventario en hoja de cálculo", hojaBox, "Pega aquí el enlace CSV de tu Google Sheets (Archivo → Compartir → Publicar en la web). Vacío = se usan solo las cantidades y precios de este editor."),
+    fila("Carrito de compras", carLbl, "El cliente puede ir sumando pines y ver el desglose y el total a un costado."),
+    fila("Selección en packs", efecto, "Cómo se ve un pin del pack cuando el cliente lo marca."),
+    fila("Publicar en GitHub", ghBox, "Con esto, el botón 🚀 Publicar sube tus cambios y fotos al sitio en un solo paso, sin reemplazar archivos."),
+    fila("Pago con Yappy", yBox, "Se muestra el QR y tu número; el cliente paga en su app de Yappy y te manda el comprobante por WhatsApp.")
+  );
+}
+
+/* ---------- Pestaña Colores ---------- */
+function renderColores() {
+  const c = $("colores"); c.innerHTML = "";
+  COLORES_DEF.forEach(([k, nombre]) => {
+    const i = document.createElement("input"); i.type = "color"; i.value = datos.ajustes.colores[k];
+    i.addEventListener("input", () => { datos.ajustes.colores[k] = i.value; cambio(); });
+    const l = document.createElement("label"); l.append(i, nombre); c.appendChild(l);
+  });
+}
+$("restaurar").addEventListener("click", () => { datos.ajustes.colores = { ...COLORES_BASE }; cambio(); renderColores(); });
+
+/* ---------- Inventario desde una hoja de cálculo (Google Sheets publicada como CSV) ---------- */
+const normTxt = s => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const NOMBRES_BROCHE = ["broche de seguridad", "broche", "broches"];
+function parseCSV(t) {
+  const filas = []; let fila = [], celda = "", comillas = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (comillas) {
+      if (c === '"') { if (t[i + 1] === '"') { celda += '"'; i++; } else comillas = false; }
+      else celda += c;
+    } else if (c === '"') comillas = true;
+    else if (c === ",") { fila.push(celda); celda = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && t[i + 1] === "\n") i++; fila.push(celda); filas.push(fila); fila = []; celda = ""; }
+    else celda += c;
+  }
+  if (celda !== "" || fila.length) { fila.push(celda); filas.push(fila); }
+  return filas;
+}
+function aNumero(v) {
+  if (v == null) return null;
+  let s = String(v).replace(/[^\d.,-]/g, "");
+  if (s === "" || s === "-") return null;
+  if (s.includes(",") && s.includes(".")) s = s.replace(/,/g, "");
+  else if (s.includes(",")) s = s.replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+async function leerHoja(url) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(url, { signal: ctl.signal, cache: "no-store" });
+    if (!r.ok) throw new Error("respuesta " + r.status);
+    const filas = parseCSV(await r.text()).filter(f => f.some(c => c.trim() !== ""));
+    if (!filas.length) throw new Error("la hoja está vacía");
+    const cab = filas[0].map(normTxt);
+    const col = alias => cab.findIndex(h => alias.includes(h));
+    const iN = col(["nombre", "articulo", "producto", "pin"]);
+    const iC = col(["cantidad", "stock", "existencias", "quedan", "disponibles"]);
+    const iP = col(["precio", "precio de venta", "precio venta", "pvp"]);
+    if (iN < 0) throw new Error("no encontré una columna llamada «nombre»");
+    const datos = filas.slice(1)
+      .map(f => ({ nombre: (f[iN] || "").trim(), cantidad: iC >= 0 ? aNumero(f[iC]) : null, precio: iP >= 0 ? aNumero(f[iP]) : null }))
+      .filter(x => x.nombre);
+    return { datos, columnas: { cantidad: iC >= 0, precio: iP >= 0 } };
+  } catch (err) {
+    throw new Error(err.name === "AbortError" ? "tardó demasiado en responder" : err.message);
+  } finally { clearTimeout(t); }
+}
+function aplicarHoja(res, articulos, ajustes) {
+  const mapa = new Map(res.datos.map(x => [normTxt(x.nombre), x]));
+  let coinciden = 0;
+  articulos.forEach(a => {
+    const x = mapa.get(normTxt(a.nombre));
+    if (!x) return;
+    coinciden++;
+    if (x.cantidad != null) a.cantidad = Math.max(0, Math.floor(x.cantidad));
+    if (x.precio != null && x.precio >= 0) a.precio = x.precio;
+  });
+  const b = NOMBRES_BROCHE.map(n => mapa.get(n)).find(Boolean);
+  if (b && b.cantidad != null && ajustes.broche) ajustes.broche.cantidad = Math.max(0, Math.floor(b.cantidad));
+  return coinciden;
+}
+
+
+async function probarHoja(url, salida) {
+  salida.className = "res"; salida.textContent = "Leyendo la hoja…";
+  try {
+    const res = await leerHoja(url);
+    const esPieza = x => x.nombre.includes("|");
+    const par = nombre => { const i = nombre.indexOf("|"); return [nombre.slice(0, i).trim(), nombre.slice(i + 1).trim()]; };
+    const llave = (p, q) => normTxt(p) + "|" + normTxt(q);
+    const filasArt = res.datos.filter(x => !esPieza(x)), filasPz = res.datos.filter(esPieza);
+    const enCatalogo = new Set(datos.articulos.map(x => normTxt(x.nombre)));
+    const enHoja = new Set(filasArt.map(x => normTxt(x.nombre)));
+    const sinFila = datos.articulos.filter(x => !enHoja.has(normTxt(x.nombre))).map(x => x.nombre);
+    const sobran = filasArt.filter(x => !enCatalogo.has(normTxt(x.nombre)) && !NOMBRES_BROCHE.includes(normTxt(x.nombre))).map(x => x.nombre);
+    const piezasCat = new Map();
+    datos.articulos.forEach(a => (a.piezas || []).forEach(p => piezasCat.set(llave(a.nombre, p.nombre), a.nombre + " | " + p.nombre)));
+    const piezasHoja = new Set(filasPz.map(x => llave(...par(x.nombre))));
+    const pzSinFila = [...piezasCat].filter(([k]) => !piezasHoja.has(k)).map(([, v]) => v);
+    const pzSobran = filasPz.filter(x => !piezasCat.has(llave(...par(x.nombre)))).map(x => x.nombre);
+    const cols = ["nombre", res.columnas.cantidad ? "cantidad" : null, res.columnas.precio ? "precio" : null].filter(Boolean).join(", ");
+    const lista = l => l.slice(0, 12).join(", ") + (l.length > 12 ? "…" : "");
+    salida.className = "res ok";
+    salida.textContent = `✔ Conectado. Se leyeron ${filasArt.length} artículos y ${filasPz.length} piezas (columnas: ${cols}).\nCoinciden ${datos.articulos.length - sinFila.length} de ${datos.articulos.length} artículos del catálogo.`
+      + (piezasCat.size ? `\nCoinciden ${piezasCat.size - pzSinFila.length} de ${piezasCat.size} piezas de packs.` : "")
+      + (sinFila.length ? `\nArtículos sin fila en la hoja (se usan los datos del editor): ${lista(sinFila)}` : "")
+      + (pzSinFila.length ? `\nPiezas sin fila en la hoja (se usan los datos del editor): ${lista(pzSinFila)}` : "")
+      + (sobran.length ? `\nArtículos en la hoja pero no en el catálogo (no se muestran): ${lista(sobran)}` : "")
+      + (pzSobran.length ? `\nPiezas en la hoja que no existen en el catálogo: ${lista(pzSobran)}` : "");
+  } catch (err) {
+    salida.className = "res mal";
+    salida.textContent = "✖ No se pudo leer la hoja: " + err.message + ". Revisa que sea el enlace de «Publicar en la web» (hoja Catalogo, formato CSV) y que tengas internet.";
+  }
+}
+
+/* ---------- Publicar en GitHub (sin instalar nada) ---------- */
+const GH_TOKEN = "jogopines_gh_token";
+function ghToken() { try { return localStorage.getItem(GH_TOKEN) || ""; } catch (e) { return ""; } }
+function ghGuardarToken(t) { try { if (t) localStorage.setItem(GH_TOKEN, t); else localStorage.removeItem(GH_TOKEN); } catch (e) {} }
+const GH_CFG = "jogopines_gh_cfg";
+function ghCfgLocal() { try { return JSON.parse(localStorage.getItem(GH_CFG) || "{}"); } catch (er) { return {}; } }
+function ghGuardarCfg(c) { try { localStorage.setItem(GH_CFG, JSON.stringify(c)); } catch (er) {} }
+function ghConfig() {
+  const g = datos.ajustes.github || {}, l = ghCfgLocal();
+  const defaults = { usuario: "Jogopines", repo: "jogopines.github.io", rama: "main", carpeta: "" };
+  const t = k => String(g[k] || l[k] || defaults[k] || "").trim();
+  return { usuario: t("usuario"), repo: t("repo"), rama: t("rama") || "main", carpeta: t("carpeta").replace(/^\/+|\/+$/g, "") };
+}
+function ghListo() { const c = ghConfig(); return !!(c.usuario && c.repo && ghToken()); }
+const ghRama = c => c.rama.split("/").map(encodeURIComponent).join("/");
+const ghPrefijo = c => c.carpeta ? c.carpeta + "/" : "";
+function b64Texto(t) { let bin = ""; new TextEncoder().encode(t).forEach(b => { bin += String.fromCharCode(b); }); return btoa(bin); }
+const b64Archivo = f => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = () => mal(r.error); r.readAsDataURL(f); });
+async function gh(ruta, op = {}) {
+  const r = await fetch("https://api.github.com" + ruta, { ...op, headers: {
+    "Accept": "application/vnd.github+json", "Authorization": "Bearer " + ghToken(), "X-GitHub-Api-Version": "2022-11-28",
+    ...(op.body ? { "Content-Type": "application/json" } : {}) } });
+  if (!r.ok) {
+    let m = ""; try { m = (await r.json()).message || ""; } catch (e) {}
+    const pista = r.status === 401 ? " (el token no es válido o venció)"
+      : r.status === 403 ? " (el token no tiene permiso de escritura, o hay demasiadas peticiones)"
+      : r.status === 404 ? " (no encuentro el repositorio o la rama; revisa usuario, repositorio y que el token tenga acceso a él)" : "";
+    throw new Error(`GitHub respondió ${r.status}${m ? " «" + m + "»" : ""}${pista}`);
+  }
+  return r.status === 204 ? null : r.json();
+}
+function irAConfigGitHub() { document.querySelector('#tabs button[data-t="ajustes"]').click(); }
+
+let snapshot = "";     // cómo estaban los datos al abrir (o al publicar por última vez): sirve para detectar cambios hechos en otro lado
+function instantanea(d) {
+  d = d || datos;
+  const { github, ...aj } = d.ajustes;
+  return JSON.stringify({ a: d.articulos.map(articuloLimpio), c: d.categorias, aj });
+}
+const urlSitio = c => c.repo.toLowerCase() === (c.usuario + ".github.io").toLowerCase() ? `https://${c.usuario}.github.io/` : `https://${c.usuario}.github.io/${c.repo}/`;
+const decodificarB64 = b64 => new TextDecoder().decode(Uint8Array.from(atob(String(b64).replace(/\s/g, "")), ch => ch.charCodeAt(0)));
+function datosDeTexto(texto) {
+  const d = new Function(texto + "\nreturn { ajustes: typeof AJUSTES !== 'undefined' ? AJUSTES : {}, categorias: CATEGORIAS, articulos: ARTICULOS };")();
+  return normalizar(d);
+}
+
+let tmToast;
+function toast(texto, tipo, ms, html) {
+  const t = $("toast");
+  if (html) t.innerHTML = texto; else t.textContent = texto;
+  t.className = "toast " + (tipo || ""); t.hidden = false;
+  clearTimeout(tmToast);
+  if (ms !== 0) tmToast = setTimeout(() => { t.hidden = true; }, ms || 9000);
+}
+$("toast").addEventListener("click", ev => { if (ev.target.tagName !== "A") $("toast").hidden = true; });
+
+function pintarGH() {
+  const b = $("ghEstado"); if (!b) return;
+  const ok = ghListo();
+  b.textContent = ok ? "GitHub: conectado ✔" : "GitHub: sin conectar";
+  b.classList.toggle("ok", ok);
+}
+function abrirGH() {
+  const g = datos.ajustes.github, c = ghConfig();
+  let u = c.usuario, r = c.repo;
+  if (!u && /\.github\.io$/.test(location.hostname)) { u = location.hostname.split(".")[0]; r = r || (location.pathname.split("/")[1] || ""); }
+  $("ghUsuario").value = u || ""; $("ghRepo").value = r || ""; $("ghRama").value = c.rama || "main"; $("ghCarpeta").value = c.carpeta || "";
+  $("ghToken").value = ""; $("ghToken").placeholder = ghToken() ? "•••••••• (ya hay un token guardado en este navegador)" : "Pega aquí tu token";
+  $("ghRes").className = "res"; $("ghRes").textContent = "";
+  if (!$("dlgGH").open) $("dlgGH").showModal();
+}
+async function ghProbar(salida) {
+  salida.className = "res"; salida.textContent = "Probando…";
+  try {
+    const c = ghConfig();
+    if (!c.usuario || !c.repo) throw new Error("escribe tu usuario y el nombre del repositorio");
+    if (!ghToken()) throw new Error("pega primero tu token");
+    const r = await gh(`/repos/${c.usuario}/${c.repo}`);
+    await gh(`/repos/${c.usuario}/${c.repo}/branches/${ghRama(c)}`);
+    const escribe = r.permissions ? !!r.permissions.push : null;
+    if (escribe === false) {
+      salida.className = "res mal";
+      salida.textContent = `⚠ Conectado a ${r.full_name}, pero el token NO tiene permiso de escritura. Crea otro con «Contents: Read and write».`;
+      return false;
+    }
+    salida.className = "res ok";
+    salida.textContent = `✔ Conectado a ${r.full_name} (rama ${c.rama}).` + (escribe === null ? " No pude comprobar el permiso de escritura; se verá al publicar." : " Permiso para escribir: sí.");
+    return true;
+  } catch (err) { salida.className = "res mal"; salida.textContent = "✖ " + err.message; return false; }
+}
+async function ghProbarGuardar() {
+  const g = datos.ajustes.github;
+  g.usuario = $("ghUsuario").value.trim(); g.repo = $("ghRepo").value.trim();
+  g.rama = $("ghRama").value.trim() || "main"; g.carpeta = $("ghCarpeta").value.trim();
+  ghGuardarCfg({ usuario: g.usuario, repo: g.repo, rama: g.rama, carpeta: g.carpeta });
+  const t = $("ghToken").value.trim(); if (t) { ghGuardarToken(t); $("ghToken").value = ""; }
+  const ok = await ghProbar($("ghRes"));
+  pintarGH(); renderAjustes();
+  if (ok) toast("GitHub conectado. Ya puedes usar 🚀 Publicar.", "ok");
+  return ok;
+}
+
+function preguntarConflicto(texto) {
+  return new Promise(res => {
+    const d = $("dlgConflicto"); $("cfTexto").textContent = texto;
+    let listo = false;
+    const fin = v => { if (listo) return; listo = true; if (d.open) d.close(); res(v); };
+    $("cfCancelar").onclick = () => fin("cancelar"); $("cfTraer").onclick = () => fin("traer"); $("cfReemplazar").onclick = () => fin("reemplazar");
+    d.oncancel = () => fin("cancelar");
+    d.showModal();
+  });
+}
+
+async function publicarGitHub() {
+  if (!ghListo()) { toast("Primero conecta GitHub (solo se hace una vez).", "", 5000); abrirGH(); return; }
+  if ($("formArt").open) { toast("Cierra el formulario del artículo antes de publicar.", "mal"); return; }
+  const c = ghConfig(), base = `/repos/${c.usuario}/${c.repo}`, pref = ghPrefijo(c), btn = $("publicar");
+  btn.disabled = true; btn.textContent = "⏳ Publicando…";
+  try {
+    toast("Publicando… (1/5) revisando GitHub", "", 0);
+    const ref = await gh(`${base}/git/ref/heads/${ghRama(c)}`);
+    const padre = ref.object.sha;
+    const commitPadre = await gh(`${base}/git/commits/${padre}`);
+    // ¿Qué hay publicado ahora? (para no pisar cambios hechos en otro lado)
+    let remotoDatos = null, remotoJSON = null;
+    try {
+      const f = await gh(`${base}/contents/${pref}articulos.js?ref=${ghRama(c)}`);
+      remotoDatos = datosDeTexto(decodificarB64(f.content)); remotoJSON = instantanea(remotoDatos);
+    } catch (er) { /* todavía no existe o no se pudo leer */ }
+    const mio = instantanea();
+    if (remotoJSON && remotoJSON !== snapshot && remotoJSON !== mio) {
+      toast("Hay una versión distinta en GitHub…", "", 0);
+      const r = await preguntarConflicto("En GitHub hay una versión del catálogo distinta a la que tienes abierta aquí (por ejemplo, porque publicaste o cambiaste algo desde otro lado). Si publicas lo tuyo, se reemplaza lo que hay allá.");
+      if (r === "cancelar") { toast("Publicación cancelada.", ""); return; }
+      if (r === "traer") {
+        const cfg = datos.ajustes.github;
+        datos = remotoDatos; if (!datos.ajustes.github.usuario) datos.ajustes.github = cfg;
+        fotosPendientes.clear(); snapshot = instantanea(); sucio = false; renderTodo(); pintarEstado(); pintarGH();
+        toast("Listo: ahora ves lo que está publicado. Haz de nuevo tus cambios y publica.", "ok");
+        return;
+      }
+    }
+    await prepararFotosPublicacion(base, commitPadre.tree.sha, pref);
+    if (remotoJSON === mio && !fotosPendientes.size) {
+      snapshot = mio; sucio = false; pintarEstado();
+      toast("Ya está todo publicado: no hay cambios nuevos.", "ok"); return;
+    }
+    const archivos = [];
+    if (remotoJSON !== mio) archivos.push({ ruta: pref + "articulos.js", base64: b64Texto(generar()) });
+    for (const [ruta, f] of fotosPendientes) archivos.push({ ruta: pref + ruta, base64: await b64Archivo(f) });
+    toast(`Publicando… (2/5) subiendo ${archivos.length} archivo(s)`, "", 0);
+    const entradas = [];
+    for (const a of archivos) {
+      const blob = await gh(`${base}/git/blobs`, { method: "POST", body: JSON.stringify({ content: a.base64, encoding: "base64" }) });
+      entradas.push({ path: a.ruta, mode: "100644", type: "blob", sha: blob.sha });
+    }
+    toast("Publicando… (3/5) armando el cambio", "", 0);
+    const arbol = await gh(`${base}/git/trees`, { method: "POST", body: JSON.stringify({ base_tree: commitPadre.tree.sha, tree: entradas }) });
+    const nuevo = await gh(`${base}/git/commits`, { method: "POST", body: JSON.stringify({ message: "Actualización desde el editor · " + new Date().toLocaleString(), tree: arbol.sha, parents: [padre] }) });
+    toast("Publicando… (4/5) enviando", "", 0);
+    await gh(`${base}/git/refs/heads/${ghRama(c)}`, { method: "PATCH", body: JSON.stringify({ sha: nuevo.sha }) });
+    const nFotos = archivos.filter(a => !a.ruta.endsWith("articulos.js")).length;
+    fotosPendientes.clear(); snapshot = mio; sucio = false; pintarEstado();
+    toast(`✔ Publicado${nFotos ? " (con " + nFotos + " foto" + (nFotos > 1 ? "s" : "") + ")" : ""}. En 1 o 2 minutos se ve en <a href="${escH(urlSitio(c))}" target="_blank" rel="noopener">tu sitio</a> (recarga con Ctrl+F5).`, "ok", 15000, true);
+  } catch (er) { toast("No se pudo publicar: " + er.message, "mal", 14000); }
+  finally { btn.disabled = false; btn.textContent = "🚀 Publicar"; }
+}
+$("publicar").addEventListener("click", publicarDesdeMovil);
+$("ghEstado").addEventListener("click", abrirGH);
+$("ghCerrar").addEventListener("click", () => $("dlgGH").close());
+$("ghOlvidar").addEventListener("click", () => {
+  ghGuardarToken(""); pintarGH(); $("ghToken").placeholder = "Pega aquí tu token";
+  $("ghRes").className = "res"; $("ghRes").textContent = "Token borrado de este navegador.";
+});
+$("ghProbarGuardar").addEventListener("click", ghProbarGuardar);
+
+/* ---------- Pestañas y arranque ---------- */
+document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("activa", x === b));
+  document.querySelectorAll("section").forEach(s => { s.hidden = s.id !== "t-" + b.dataset.t; });
+}));
+function renderTodo() { renderArticulos(); renderCategorias(); renderAjustes(); renderColores(); }
+snapshot = instantanea();
+renderTodo(); pintarEstado(); pintarGH();
+
+(async () => {
+  if (!soporta) return;
+  try {
+    const h = await BD.leer();
+    if (!h) return;
+    carpeta = h;
+    if ((await h.queryPermission({ mode: "readwrite" })) === "granted") await alConectar(); else pintarEstado();
+  } catch (e) {}
+})();
+</script>
+<script>
+let listoMovil = false;
+let timerBorrador;
+let colaBorrador = Promise.resolve();
+function abrirBorradores() {
+  return new Promise((resolve, reject) => {
+    const solicitud = indexedDB.open('jogopines_editor_movil', 1);
+    solicitud.onupgradeneeded = () => solicitud.result.createObjectStore('borradores');
+    solicitud.onsuccess = () => resolve(solicitud.result);
+    solicitud.onerror = () => reject(solicitud.error);
+  });
+}
+async function escribirBorrador() {
+  const registro = { texto: generar(), snapshot, fotos: [...fotosPendientes], sucio };
+  const clave = JSON.stringify(ghConfig());
+  colaBorrador = colaBorrador.catch(() => {}).then(async () => {
+    const db = await abrirBorradores();
+    try {
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('borradores', 'readwrite');
+        tx.objectStore('borradores').put(registro, clave);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Guardado interrumpido'));
+      });
+    } finally { db.close(); }
+  });
+  return colaBorrador;
+}
+function guardarBorradorMovil() {
+  if (!listoMovil) return;
+  clearTimeout(timerBorrador);
+  timerBorrador = setTimeout(() => {
+    escribirBorrador().then(() => {
+      $('estado').textContent = 'Borrador guardado en este dispositivo · pulsa Publicar para actualizar la web';
+    }).catch(error => toast('No se pudo guardar el borrador: ' + error.message, 'mal'));
+  }, 350);
+}
+async function publicarDesdeMovil() {
+  if (!listoMovil) return;
+  clearTimeout(timerBorrador);
+  await publicarGitHub();
+  try { await escribirBorrador(); }
+  catch (error) { toast('No se pudo guardar la copia del dispositivo: ' + error.message, 'mal'); }
+}
+const etiquetasMovil = ['Seleccionar', 'Nombre', 'Categoría', 'Precio', 'Cantidad', 'En camino', 'Broche', 'Medidas', 'Foto', 'Descripción', 'Acciones'];
+function etiquetarTarjetasMovil() {
+  for (const fila of $('filas').children) {
+    if (fila.classList.contains('grupo-fila')) continue;
+    [...fila.cells].forEach((celda, indice) => { celda.dataset.campo = etiquetasMovil[indice]; });
+  }
+}
+new MutationObserver(etiquetarTarjetasMovil).observe($('filas'), { childList: true });
+etiquetarTarjetasMovil();
+async function iniciarMovil() {
+  let cargaCorrecta = false;
+  $('layout').inert = true;
+  $('publicar').disabled = true;
+  $('estado').textContent = 'Cargando catálogo…';
+  try {
+    const db = await abrirBorradores();
+    const borrador = await new Promise((resolve, reject) => {
+      const solicitud = db.transaction('borradores').objectStore('borradores').get(JSON.stringify(ghConfig()));
+      solicitud.onsuccess = () => resolve(solicitud.result);
+      solicitud.onerror = () => reject(solicitud.error);
+    });
+    db.close();
+    if (borrador?.sucio) {
+      datos = datosDeTexto(borrador.texto);
+      snapshot = borrador.snapshot;
+      sucio = true;
+      for (const [ruta, archivo] of borrador.fotos) fotosPendientes.set(ruta, archivo);
+      $('estado').textContent = 'Borrador recuperado · cambios pendientes de publicar';
+    } else {
+      let texto;
+      if (ghListo()) {
+        const config = ghConfig();
+        const archivo = await gh(`/repos/${config.usuario}/${config.repo}/contents/${ghPrefijo(config)}articulos.js?ref=${ghRama(config)}`);
+        texto = decodificarB64(archivo.content);
+      } else {
+        const respuesta = await fetch('articulos.js?movil=' + Date.now(), { cache: 'no-store' });
+        if (!respuesta.ok) throw new Error('No se pudo cargar el catálogo');
+        texto = await respuesta.text();
+      }
+      datos = datosDeTexto(texto);
+      snapshot = instantanea();
+      $('estado').textContent = 'Catálogo cargado · los cambios se guardan como borrador';
+    }
+    renderTodo();
+    pintarGH();
+    cargaCorrecta = true;
+  } catch (error) {
+    toast('No se pudo cargar el catálogo: ' + error.message + '. Revisa tu conexión y recarga.', 'mal', 18000);
+  } finally {
+    listoMovil = cargaCorrecta;
+    $('layout').inert = !cargaCorrecta;
+    $('publicar').disabled = !cargaCorrecta;
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && listoMovil && sucio) {
+    clearTimeout(timerBorrador);
+    escribirBorrador().catch(() => {});
+  }
+});
+iniciarMovil();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"name": "Editor Jogopines", "short_name": "Editor Jogo", "start_url": "./editor-movil.html", "display": "standalone", "background_color": "#FBF6EE", "theme_color": "#8A3B4E", "icons": [{"src": "Fotos/Jogopines_Original.png", "sizes": "any", "type": "image/png"}]}
