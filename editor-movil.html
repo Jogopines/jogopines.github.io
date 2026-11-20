@@ -1493,7 +1493,7 @@ async function publicarGitHub() {
   } catch (er) { toast("No se pudo publicar: " + er.message, "mal", 14000); }
   finally { btn.disabled = false; btn.textContent = "🚀 Publicar"; }
 }
-$("publicar").addEventListener("click", publicarDesdeMovil);
+$("publicar").addEventListener("click", () => publicarDesdeMovil());
 $("ghEstado").addEventListener("click", abrirGH);
 $("ghCerrar").addEventListener("click", () => $("dlgGH").close());
 $("ghOlvidar").addEventListener("click", () => {
