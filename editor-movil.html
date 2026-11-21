@@ -422,12 +422,12 @@ input, select, textarea { font-size:16px; }
 
 <dialog id="dlgConflicto">
   <div class="form-art">
-    <h2>Hay una versión distinta en GitHub</h2>
+    <h2>⚠ Cambios nuevos en GitHub</h2>
     <p id="cfTexto"></p>
+    <p class="pz-nota">No se ha publicado ni borrado nada. El borrador sigue en este dispositivo. Si descargas una copia, recuerda que las fotografías nuevas se guardan por separado.</p>
     <div class="form-botones">
-      <button id="cfCancelar" type="button">Cancelar</button>
-      <button id="cfTraer" type="button">Ver lo que hay en GitHub</button>
-      <button id="cfReemplazar" type="button" class="principal">Publicar lo mío (reemplaza)</button>
+      <button id="cfCancelar" type="button" class="principal">Conservar borrador y cerrar</button>
+      <button id="cfTraer" type="button">⬇ Descargar respaldo .js</button>
     </div>
   </div>
 </dialog>
@@ -1428,12 +1428,25 @@ async function ghProbarGuardar() {
   return ok;
 }
 
+function descargarRespaldoMovil() {
+  // Copia local del catálogo; nunca modifica GitHub ni descarta el borrador.
+  const url = URL.createObjectURL(new Blob([generar()], { type: "text/javascript;charset=utf-8" }));
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = "articulos-borrador-" + new Date().toISOString().slice(0, 10) + ".js";
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
 function preguntarConflicto(texto) {
   return new Promise(res => {
     const d = $("dlgConflicto"); $("cfTexto").textContent = texto;
     let listo = false;
     const fin = v => { if (listo) return; listo = true; if (d.open) d.close(); res(v); };
-    $("cfCancelar").onclick = () => fin("cancelar"); $("cfTraer").onclick = () => fin("traer"); $("cfReemplazar").onclick = () => fin("reemplazar");
+    $("cfCancelar").onclick = () => fin("cancelar");
+    $("cfTraer").onclick = () => { descargarRespaldoMovil(); fin("respaldo"); };
     d.oncancel = () => fin("cancelar");
     d.showModal();
   });
@@ -1444,29 +1457,34 @@ async function publicarGitHub() {
   if ($("formArt").open) { toast("Cierra el formulario del artículo antes de publicar.", "mal"); return; }
   const c = ghConfig(), base = `/repos/${c.usuario}/${c.repo}`, pref = ghPrefijo(c), btn = $("publicar");
   btn.disabled = true; btn.textContent = "⏳ Publicando…";
+  const layoutInerteAnterior = $("layout").inert;
+  $("layout").inert = true; // Evita editar cantidades mientras se prepara el commit.
   try {
     toast("Publicando… (1/5) revisando GitHub", "", 0);
     const ref = await gh(`${base}/git/ref/heads/${ghRama(c)}`);
     const padre = ref.object.sha;
     const commitPadre = await gh(`${base}/git/commits/${padre}`);
-    // ¿Qué hay publicado ahora? (para no pisar cambios hechos en otro lado)
-    let remotoDatos = null, remotoJSON = null;
-    try {
-      const f = await gh(`${base}/contents/${pref}articulos.js?ref=${ghRama(c)}`);
-      remotoDatos = datosDeTexto(decodificarB64(f.content)); remotoJSON = instantanea(remotoDatos);
-    } catch (er) { /* todavía no existe o no se pudo leer */ }
+    // Una lectura fallida NO significa que el archivo esté vacío: cancelar siempre.
+    const f = await gh(`${base}/contents/${pref}articulos.js?ref=${ghRama(c)}`);
+    if (!f || f.encoding !== "base64" || !f.content) {
+      throw new Error("No pude verificar articulos.js en GitHub. Se canceló la publicación para proteger el inventario.");
+    }
+    const remotoDatos = datosDeTexto(decodificarB64(f.content));
+    const remotoJSON = instantanea(remotoDatos);
     const mio = instantanea();
-    if (remotoJSON && remotoJSON !== snapshot && remotoJSON !== mio) {
-      toast("Hay una versión distinta en GitHub…", "", 0);
-      const r = await preguntarConflicto("En GitHub hay una versión del catálogo distinta a la que tienes abierta aquí (por ejemplo, porque publicaste o cambiaste algo desde otro lado). Si publicas lo tuyo, se reemplaza lo que hay allá.");
-      if (r === "cancelar") { toast("Publicación cancelada.", ""); return; }
-      if (r === "traer") {
-        const cfg = datos.ajustes.github;
-        datos = remotoDatos; if (!datos.ajustes.github.usuario) datos.ajustes.github = cfg;
-        fotosPendientes.clear(); snapshot = instantanea(); sucio = false; renderTodo(); pintarEstado(); pintarGH();
-        toast("Listo: ahora ves lo que está publicado. Haz de nuevo tus cambios y publica.", "ok");
+    if (remotoJSON !== snapshot && remotoJSON !== mio) {
+      if (!sucio && fotosPendientes.size === 0) {
+        // No hay trabajo local: cargar la edición más nueva de GitHub sin pisarla.
+        datos = remotoDatos;
+        snapshot = remotoJSON;
+        renderTodo(); pintarEstado(); pintarGH();
+        toast("Se cargó el catálogo actualizado de GitHub. Ya puedes continuar editando.", "ok", 12000);
         return;
       }
+      // Cambios simultáneos PC/teléfono: JAMÁS ofrecer reemplazar el archivo remoto.
+      await preguntarConflicto("Tu teléfono y GitHub tienen cambios diferentes. La publicación se bloqueó para evitar que se pierdan productos, precios o cantidades. Conserva este borrador, descarga un respaldo si quieres y concilia los cambios desde tu PC antes de publicar.");
+      toast("No se publicó nada. Se conservó el borrador del teléfono.", "mal", 12000);
+      return;
     }
     await prepararFotosPublicacion(base, commitPadre.tree.sha, pref);
     if (remotoJSON === mio && !fotosPendientes.size) {
@@ -1486,12 +1504,21 @@ async function publicarGitHub() {
     const arbol = await gh(`${base}/git/trees`, { method: "POST", body: JSON.stringify({ base_tree: commitPadre.tree.sha, tree: entradas }) });
     const nuevo = await gh(`${base}/git/commits`, { method: "POST", body: JSON.stringify({ message: "Actualización desde el editor · " + new Date().toLocaleString(), tree: arbol.sha, parents: [padre] }) });
     toast("Publicando… (4/5) enviando", "", 0);
-    await gh(`${base}/git/refs/heads/${ghRama(c)}`, { method: "PATCH", body: JSON.stringify({ sha: nuevo.sha }) });
+    // Comprobar de nuevo que nadie haya publicado durante la subida de las fotos.
+    const refActual = await gh(`${base}/git/ref/heads/${ghRama(c)}`);
+    if (refActual.object.sha !== padre) {
+      throw new Error("Se publicó otra actualización mientras preparabas la tuya. No se sobrescribió nada: revisa el borrador y vuelve a sincronizar.");
+    }
+    // GitHub solo acepta avances normales de la rama, nunca forzar sobrescrituras.
+    await gh(`${base}/git/refs/heads/${ghRama(c)}`, { method: "PATCH", body: JSON.stringify({ sha: nuevo.sha, force: false }) });
     const nFotos = archivos.filter(a => !a.ruta.endsWith("articulos.js")).length;
     fotosPendientes.clear(); snapshot = mio; sucio = false; pintarEstado();
     toast(`✔ Publicado${nFotos ? " (con " + nFotos + " foto" + (nFotos > 1 ? "s" : "") + ")" : ""}. En 1 o 2 minutos se ve en <a href="${escH(urlSitio(c))}" target="_blank" rel="noopener">tu sitio</a> (recarga con Ctrl+F5).`, "ok", 15000, true);
   } catch (er) { toast("No se pudo publicar: " + er.message, "mal", 14000); }
-  finally { btn.disabled = false; btn.textContent = "🚀 Publicar"; }
+  finally {
+    $("layout").inert = layoutInerteAnterior;
+    btn.disabled = false; btn.textContent = "🚀 Publicar";
+  }
 }
 $("publicar").addEventListener("click", () => publicarDesdeMovil());
 $("ghEstado").addEventListener("click", abrirGH);
@@ -1620,11 +1647,33 @@ async function iniciarMovil() {
     $('publicar').disabled = !cargaCorrecta;
   }
 }
+// Cuando se vuelve al editor tras usar la PC, traer lo nuevo solo si no hay cambios locales.
+let verificandoAlVolver = false;
+async function sincronizarAlVolver() {
+  if (verificandoAlVolver || !listoMovil || sucio || fotosPendientes.size || !ghListo() ||
+      $('publicar').disabled || $('formArt').open || $('dlgConflicto').open || $('dlgGH').open) return;
+  verificandoAlVolver = true;
+  try {
+    const c = ghConfig();
+    const f = await gh(`/repos/${c.usuario}/${c.repo}/contents/${ghPrefijo(c)}articulos.js?ref=${ghRama(c)}`);
+    if (!f || f.encoding !== 'base64' || !f.content) return;
+    const nuevo = datosDeTexto(decodificarB64(f.content));
+    const versionRemota = instantanea(nuevo);
+    if (versionRemota !== instantanea() && !sucio && !$('formArt').open) {
+      datos = nuevo; snapshot = versionRemota;
+      renderTodo(); pintarEstado(); pintarGH();
+      toast('Catálogo actualizado con los cambios más recientes de GitHub.', 'ok', 8000);
+      escribirBorrador().catch(() => {});
+    }
+  } catch (error) {
+    // Un fallo de conexión no debe borrar ni sustituir los datos que ya se cargaron.
+  } finally { verificandoAlVolver = false; }
+}
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && listoMovil && sucio) {
     clearTimeout(timerBorrador);
     escribirBorrador().catch(() => {});
-  }
+  } else if (!document.hidden) sincronizarAlVolver();
 });
 iniciarMovil();
 
