@@ -173,6 +173,40 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
   .gh-campos { grid-template-columns: 1fr; }
   .chip { padding: 7px 12px; }
 }
+
+.layout > div, #t-articulos, .pz-box { min-width:0 }
+.sticky-tools { position:sticky; top:var(--top-sticky-height); }
+.chips { flex-wrap:nowrap; overflow-x:auto; margin:0 0 6px }
+.chip { flex:none; white-space:nowrap }
+.busqueda { position:relative; flex:1 1 170px; max-width:320px }
+.busqueda input#buscar { width:100%; max-width:none; padding-right:36px }
+#buscar::-webkit-search-cancel-button { -webkit-appearance:none }
+#borrarBusqueda { position:absolute; right:1px; top:1px; bottom:1px; width:34px; padding:0; border:0; background:transparent }
+.opciones { margin-top:4px }
+.opciones summary { cursor:pointer; font-weight:600; color:var(--acento) }
+.opciones .herr { margin-top:6px }
+.herr.principal-busqueda { margin:0 }
+.deslizador { display:block; width:100%; height:18px; margin:0; padding:0; accent-color:var(--acento); cursor:pointer }
+.precio-control { display:inline-grid; grid-template-columns:28px minmax(0,1fr) 28px; align-items:center; width:100%; gap:2px }
+.precio-control button { padding:0; height:34px; font-size:17px }
+.precio-control input { width:100%; min-width:0; padding-inline:4px; text-align:center; appearance:textfield }
+.precio-control input::-webkit-inner-spin-button { -webkit-appearance:none }
+.pz-fila { grid-template-columns:minmax(130px,1.3fr) minmax(110px,1fr) 124px 62px minmax(100px,1fr) 36px; min-width:635px }
+@media(min-width:901px) {
+  #tablaArt th:nth-child(4), #tablaArt td:nth-child(4) { width:134px }
+  #tablaArt th:nth-child(9), #tablaArt td:nth-child(9) { width:185px }
+  .opciones[open] summary { font-size:.85rem }
+}
+@media(max-width:900px) {
+  .sticky-tools { padding:3px 0 5px }
+  .chips { gap:5px; padding:0; margin-bottom:4px }
+  .chip { padding:4px 10px }
+  .opciones[open] .extras { max-height:23dvh; overflow-y:auto }
+  .barra, .tabs { margin-bottom:0 }
+  .principal-busqueda { flex-wrap:nowrap; gap:4px }
+  .principal-busqueda #agregar { padding:6px 8px }
+  .busqueda { max-width:none; min-width:0 }
+}
 </style>
 </head>
 <body>
@@ -181,7 +215,7 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
   <h1>Editor Jogopines <small style="font-weight:400;color:var(--suave)">v4</small></h1>
   <div class="barra">
     <button id="conectar" class="principal">📂 Conectar carpeta</button>
-    <button id="reconectar" hidden>↻ Reconectar carpeta</button>
+    <button id="reconectar" hidden>Autorizar edición</button>
     <span id="estado"></span>
     <button id="publicar" class="principal" title="Sube articulos.js y las fotos nuevas a tu sitio en GitHub">🚀 Publicar</button>
     <button id="ghEstado" class="chip-gh" title="Conexión con GitHub (para publicar)">GitHub: sin conectar</button>
@@ -200,13 +234,16 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
 <div class="layout" id="layout">
   <div>
     <section id="t-articulos">
-      <div class="sticky-tools">
       <div class="aviso-hoja" id="avisoHoja" hidden>📊 Inventario enlazado a tu hoja de cálculo: en el catálogo, la <b>cantidad</b> y el <b>precio</b> de cada artículo salen de la hoja (si el nombre coincide). Los de aquí se usan solo si la hoja no está disponible.</div>
+      <div class="sticky-tools">
+      
+      <input class="deslizador" data-desliza="chips" type="range" aria-label="Desplazar categorías" min="0" value="0" hidden>
       <div class="chips" id="chips"></div>
-      <div class="herr">
-        <input type="search" id="buscar" placeholder="Buscar por nombre...">
+      <div class="herr principal-busqueda"><div class="busqueda"><input type="search" id="buscar" aria-label="Buscar por nombre o alias" placeholder="Nombre o alias…"><button type="button" id="borrarBusqueda" aria-label="Borrar búsqueda" hidden>×</button></div><button id="agregar" class="principal">+ Agregar artículo</button></div>
+      <details class="opciones" id="opcionesArt"><summary>Opciones</summary><div class="extras"><div class="herr">
+        
         <label class="tam-fotos">Fotos <select id="tamFotos"><option value="s">Pequeñas</option><option value="m">Medianas</option><option value="l" selected>Grandes</option><option value="xl">Muy grandes</option></select></label>
-        <button id="agregar" class="principal">+ Agregar artículo</button>
+        
         <button id="detectar" title="Convierte en piezas los sets cuyas medidas traen varios nombres">📦 Detectar packs</button>
         <label class="chk-med"><input type="checkbox" id="medTop"> 📏 Mostrar medidas en el catálogo</label>
         <span id="conteo"></span>
@@ -217,7 +254,7 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
         <button type="button" id="quitarCamino" disabled>✓ Quitar marca de seleccionados</button>
         <button type="button" id="limpiarSeleccion" disabled>Limpiar selección</button>
       </div>
-      </div>
+      </div></details></div>
       <div class="tabla"><table id="tablaArt" data-fotos="l">
         <thead><tr><th><input type="checkbox" id="selTodosArt" class="chk-seleccion" title="Seleccionar todos los artículos visibles"></th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Cantidad</th><th>Viene en camino</th><th>Broche</th><th class="medidas">Medidas</th><th>Foto</th><th>Descripción</th><th></th></tr></thead>
         <tbody id="filas"></tbody>
@@ -308,6 +345,7 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
       </div>
       <div class="form-campos">
         <label>Nombre *<input id="fNombre" placeholder="ej. Pin Snoopy durmiendo"></label>
+        <label>Nombre corto (solo editor)<input id="fAlias" placeholder="Ej. Cocodrilo Loki"></label>
         <label>Categoría<select id="fCat"></select></label>
         <div class="dos">
           <label>Precio<input id="fPrecio" type="number" min="0" step="0.01" placeholder="ej. 1.50"></label>
@@ -325,7 +363,7 @@ tr.grupo-fila td { padding: 0; background: #F5EBDD; border-top: 3px solid var(--
     <details class="pz-box" id="fPiezasBox">
       <summary>📦 Piezas del pack (opcional)</summary>
       <p class="pz-nota">Si este artículo es un pack, escribe cuántos pines trae y presiona <b>Crear</b>: se crean campos vacíos con las guías tenues «Pin 1», «Pin 2», «Pin 3»... Escribe o pega directamente el nombre y completa las medidas. El cliente podrá elegir cuáles llevar y el precio cambia según su elección. Cada pieza cuesta el <b>Precio</b> de arriba (por pin), salvo que le pongas otro. La <b>cantidad</b> del artículo se calcula sola sumando las piezas disponibles.</p>
-      <div class="pz-tabla" id="fPiezas"></div>
+      <input class="deslizador" data-desliza="fPiezas" type="range" aria-label="Desplazar campos del pack" min="0" value="0" hidden><div class="pz-tabla" id="fPiezas"></div><input class="deslizador" data-desliza="fPiezas" type="range" aria-label="Desplazar campos del pack" min="0" value="0" hidden>
       <div class="pz-barra">
         <span class="pz-rapido">Crear <input type="number" id="fNPiezas" min="1" max="60" value="3"> pines de una vez <button type="button" id="fCrearN">Crear</button></span>
         <button type="button" id="fAddPieza">+ Agregar una pieza</button>
@@ -398,6 +436,60 @@ if ("ResizeObserver" in window) new ResizeObserver(actualizarAlturaCinta).observ
 else window.addEventListener("resize", actualizarAlturaCinta, { passive: true });
 
 const $ = id => document.getElementById(id);
+
+function controlPrecio(input, precioBase = () => 0) {
+  const grupo = document.createElement("span");
+  grupo.className = "precio-control";
+  input.setAttribute("aria-label", "Precio");
+  function boton(signo) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = signo > 0 ? "+" : "−";
+    b.setAttribute("aria-label", signo > 0 ? "Subir 25 centavos" : "Bajar 25 centavos");
+    b.addEventListener("click", () => {
+      const antes = input.value === "" ? Number(precioBase()) || 0 : input.valueAsNumber;
+      input.value = (Math.max(0, Math.round(antes * 100) + signo * 25) / 100).toFixed(2);
+      input.dispatchEvent(new Event("input", { bubbles:true }));
+    });
+    return b;
+  }
+  grupo.append(boton(-1), input, boton(1));
+  return grupo;
+}
+for (const id of ["fPrecio", "fPrecioPack"]) {
+  const input = $(id);
+  const label = input.parentElement;
+  label.htmlFor = id;
+  const contenedor = document.createElement("div");
+  label.before(contenedor);
+  contenedor.append(label, controlPrecio(input));
+}
+function vincularDeslizadores(id) {
+  const zona = $(id);
+  const barras = [...document.querySelectorAll('[data-desliza="' + id + '"]')];
+  function ajustar() {
+    const limite = Math.max(0, zona.scrollWidth - zona.clientWidth);
+    for (const barra of barras) {
+      barra.hidden = !zona.clientWidth || limite < 2;
+      barra.max = limite;
+      barra.value = zona.scrollLeft;
+    }
+  }
+  for (const barra of barras) barra.addEventListener("input", () => { zona.scrollLeft = Number(barra.value); });
+  zona.addEventListener("scroll", ajustar, {passive:true});
+  new ResizeObserver(ajustar).observe(zona);
+  new MutationObserver(ajustar).observe(zona, {childList:true});
+  ajustar();
+}
+vincularDeslizadores("chips");
+vincularDeslizadores("fPiezas");
+$("opcionesArt").open = !matchMedia("(max-width:900px)").matches;
+$("borrarBusqueda").addEventListener("click", () => {
+  $("buscar").value = "";
+  $("buscar").dispatchEvent(new Event("input"));
+  $("buscar").focus({preventScroll:true});
+});
+
 const COLORES_BASE = { fondo: "#FBF6EE", cabecera: "#FBE9D0", acento: "#8A3B4E", p1: "#FFD9E2", p2: "#D5F0E3", p3: "#FFE9C7", p4: "#D4E6FA", p5: "#E6DCF7" };
 const COLORES_DEF = [["fondo", "Fondo de la página"], ["cabecera", "Franja de arriba"], ["acento", "Botones y precios"],
   ["p1", "Pastel 1 (rosa)"], ["p2", "Pastel 2 (menta)"], ["p3", "Pastel 3 (durazno)"], ["p4", "Pastel 4 (celeste)"], ["p5", "Pastel 5 (lila)"]];
@@ -438,6 +530,7 @@ function articuloLimpio(a) {
     medidas: a.medidas || "", verMedidas: a.verMedidas !== false, encargo: a.encargo !== false, enCamino: !!a.enCamino,
     imagen: (a.imagen || "").trim(), descripcion: a.descripcion
   };
+  if (a.alias) o.alias = a.alias;
   if (Array.isArray(a.piezas) && a.piezas.length) {
     o.piezas = a.piezas.map(p => {
       const q = { nombre: p.nombre, medidas: p.medidas || "", imagen: (p.imagen || "").trim(), cantidad: p.cantidad ?? 1 };
@@ -461,9 +554,10 @@ function mensaje(t, mal) {
 }
 function pintarEstado() {
   const e = $("estado");
+  $("conectar").textContent = carpeta ? "📁 Cambiar carpeta" : "📁 Conectar carpeta";
   $("reconectar").hidden = !(carpeta && !conectado);
   if (conectado) { e.className = "ok"; e.textContent = `● Carpeta «${carpeta.name}» conectada. Guardado automático${ultimo ? " · " + ultimo : ""}`; }
-  else if (carpeta) { e.className = ""; e.textContent = "Falta el permiso para esa carpeta. Presiona Reconectar."; }
+  else if (carpeta) { e.className = ""; e.textContent = "Carpeta recordada. Pulsa «Autorizar edición» para volver a guardar aquí."; }
   else if (!soporta) { e.className = ""; e.textContent = "Este navegador no guarda directo (usa Chrome o Edge en computadora). Usa 🚀 Publicar para subir tus cambios."; }
   else { e.className = ""; e.textContent = "Sin carpeta conectada: los cambios no se guardan solos."; }
 }
@@ -473,7 +567,7 @@ async function guardarEnCarpeta() {
     await w.write(generar()); await w.close();
     sucio = false; ultimo = "guardado " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     pintarEstado(); recargarVista();
-  } catch (e) { mensaje("No se pudo guardar en la carpeta: " + e.message, true); }
+  } catch (e) { if (e.name === "NotAllowedError") { conectado = false; pintarEstado(); } mensaje("No se pudo guardar en la carpeta: " + e.message, true); }
 }
 function cambio() {
   sucio = true;
@@ -497,7 +591,17 @@ async function alConectar() {
     carpeta = null; conectado = false; pintarEstado(); return;
   }
   conectado = true;
-  if (sucio) { await guardarEnCarpeta(); mensaje("Tus cambios se guardaron en la carpeta."); }
+  if (sucio) {
+    try {
+      const archivo = await carpeta.getFileHandle("articulos.js");
+      const actual = instantanea(datosDeTexto(await (await archivo.getFile()).text()));
+      if (actual !== snapshot && actual !== instantanea()) throw new Error("La carpeta contiene otros cambios.");
+      await guardarEnCarpeta();
+    } catch (e) {
+      conectado = false;
+      mensaje(e.message + " Tus cambios siguen abiertos en el editor.", true);
+    }
+  }
   else {
     try {
       const texto = await (await (await carpeta.getFileHandle("articulos.js")).getFile()).text();
@@ -510,10 +614,10 @@ async function alConectar() {
 }
 $("conectar").addEventListener("click", async () => {
   if (!soporta) { mensaje("Este navegador no lo permite. Usa Chrome o Edge en una computadora.", true); return; }
-  try { carpeta = await showDirectoryPicker({ mode: "readwrite" }); await BD.guardar(carpeta); await alConectar(); } catch (e) { /* cancelado */ }
+  try { carpeta = await showDirectoryPicker({ mode: "readwrite" }); await alConectar(); if (conectado) await BD.guardar(carpeta); } catch (e) { /* cancelado */ }
 });
 $("reconectar").addEventListener("click", async () => {
-  try { if ((await carpeta.requestPermission({ mode: "readwrite" })) === "granted") await alConectar(); } catch (e) {}
+  try { if ((await carpeta.requestPermission({ mode: "readwrite" })) === "granted") await alConectar(); else mensaje("La carpeta sigue recordada. Falta autorizar la edición.", true); } catch (e) { mensaje(e.message, true); }
 });
 
 /* ---------- Vista previa ---------- */
@@ -691,7 +795,7 @@ function campoFoto(obj, clave, local) {
   });
   lbl.appendChild(arch);
   const campoDiv = document.createElement("div"); campoDiv.className = "foto-campo";
-  const fila2 = document.createElement("div"); fila2.append(txt, lbl); campoDiv.append(fila2);
+  const fila2 = document.createElement("div"); if (clave !== "imagen") fila2.append(txt); fila2.append(lbl); campoDiv.append(fila2);
   const cont = document.createElement("div"); cont.className = "foto-celda"; cont.append(mini, campoDiv);
   return cont;
 }
@@ -780,7 +884,7 @@ $("limpiarSeleccion").addEventListener("click", () => {
 });
 
 function pintarChips() {
-  const cont = $("chips"); cont.innerHTML = "";
+  const cont = $("chips"); const desplazamiento = cont.scrollLeft; cont.innerHTML = "";
   const cuenta = {}; datos.articulos.forEach(a => { cuenta[a.categoria] = (cuenta[a.categoria] || 0) + 1; });
   const crear = (clave, texto, n) => {
     const b = document.createElement("button"); b.type = "button";
@@ -792,6 +896,7 @@ function pintarChips() {
   crear("", "Todas", datos.articulos.length);
   datos.categorias.forEach(c => crear(c.nombre, (c.emoji ? c.emoji + " " : "") + c.nombre, cuenta[c.nombre] || 0));
   Object.keys(cuenta).filter(k => !datos.categorias.some(c => c.nombre === k)).forEach(k => crear(k, k + " (fuera de la lista)", cuenta[k]));
+  cont.scrollLeft = desplazamiento;
 }
 
 function crearFila(a) {
@@ -850,7 +955,7 @@ function crearFila(a) {
 
   tr.append(
     celda(chkSel), celda(campo(a, "nombre")), celda(sel),
-    celda(campo(a, "precio", { tipo: "number", paso: "0.01", clase: "num" })),
+    celda(controlPrecio(campo(a, "precio", { tipo: "number", paso: "0.01", clase: "num" }))),
     celda(cantidadCampo(a, marcar)), celda(caminoCont),
     celda(cc), tdMedidas(a), celda(campoFoto(a, "imagen")), celda(campo(a, "descripcion")), celda(acciones)
   );
@@ -862,7 +967,8 @@ function renderArticulos() {
   $("avisoHoja").hidden = !datos.ajustes.hojaUrl;
   $("medTop").checked = !!datos.ajustes.mostrarMedidas;
   $("tablaArt").classList.toggle("sin-medidas", !datos.ajustes.mostrarMedidas);
-  const q = $("buscar").value.trim().toLowerCase();
+  const q = normTxt($("buscar").value);
+  $("borrarBusqueda").hidden = !$("buscar").value;
   pintarChips();
 
   const filas = $("filas"); filas.innerHTML = "";
@@ -874,7 +980,7 @@ function renderArticulos() {
   let n = 0;
   claves.forEach(cat => {
     if (catFiltro && cat !== catFiltro) return;
-    const lista = grupos.get(cat).filter(a => !q || (a.nombre || "").toLowerCase().includes(q));
+    const lista = grupos.get(cat).filter(a => !q || [a.nombre, a.alias].some(texto => normTxt(texto).includes(q)));
     if (!lista.length) return;
     n += lista.length;
     const cerrado = cerrados.has(cat) && !q;          // al buscar, se abren todos los grupos
@@ -899,20 +1005,23 @@ $("agregar").addEventListener("click", () => abrirFormulario(null));
 
 /* ---------- Formulario para agregar / editar un artículo ---------- */
 let editando = null, fArchivo = null, ultimaCat = "", fPz = [];
+let posicionFormulario = 0;
 function abrirFormulario(item) {
+  if (!$("formArt").open) posicionFormulario = window.scrollY;
   editando = item; fArchivo = null;
   $("formTitulo").textContent = item ? "Editar artículo" : "Agregar artículo";
   $("fOtro").hidden = !!item;
   $("fGuardar").textContent = item ? "Guardar cambios" : "Guardar artículo";
   $("fError").textContent = "";
   const nombres = datos.categorias.map(c => c.nombre);
-  const cat = item ? item.categoria : (nombres.includes(ultimaCat) ? ultimaCat : (nombres[0] || ""));
+  const cat = item ? item.categoria : catFiltro || (nombres.includes(ultimaCat) ? ultimaCat : (nombres[0] || ""));
   $("fCat").innerHTML = "";
   (nombres.includes(cat) || !cat ? nombres : [...nombres, cat]).forEach(n => {
     const o = document.createElement("option"); o.value = n;
     o.textContent = (emojiCat(n) ? emojiCat(n) + " " : "") + n; $("fCat").appendChild(o);
   });
   $("fCat").value = cat;
+  $("fAlias").value = item?.alias || "";
   $("fNombre").value = item ? item.nombre : "";
   $("fPrecio").value = item ? item.precio : "";
   $("fCantidad").value = item ? item.cantidad : 1;
@@ -932,7 +1041,7 @@ function abrirFormulario(item) {
     const i = new Image(); i.onerror = () => { prev.textContent = "⚠️"; };
     i.src = item.imagen; prev.textContent = ""; prev.appendChild(i);
   }
-  $("fFotoNombre").textContent = item && item.imagen ? item.imagen : "";
+  $("fFotoNombre").textContent = "";
   if (!$("formArt").open) $("formArt").showModal();
   $("fNombre").focus();
 }
@@ -967,7 +1076,7 @@ function renderPiezasForm() {
     const can = campo(p, "cantidad", { tipo: "number", local: true, alCambiar: sincCantidadForm });
     const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "✕"; x.title = "Quitar pieza";
     x.addEventListener("click", () => { fPz.splice(i, 1); renderPiezasForm(); });
-    fila.append(nom, med, pre, can, campoFoto(p, "imagen", true), x);
+    fila.append(nom, med, controlPrecio(pre, () => $("fPrecio").value), can, campoFoto(p, "imagen", true), x);
     cont.appendChild(fila);
   });
   sincCantidadForm();
@@ -1008,7 +1117,7 @@ async function guardarFormulario(otro) {
   try {
     const a = editando || { imagen: "" };
     Object.assign(a, {
-      nombre, categoria: $("fCat").value,
+      nombre, alias: $("fAlias").value.trim(), categoria: $("fCat").value,
       precio: Math.max(0, Number($("fPrecio").value || 0)),
       cantidad: Math.max(0, Math.floor(Number($("fCantidad").value || 0))),
       descripcion: $("fDesc").value.trim(), medidas: $("fMedidas").value.trim(),
@@ -1026,10 +1135,10 @@ async function guardarFormulario(otro) {
     if (fArchivo && !await elegirFoto(fArchivo, ruta => { a.imagen = ruta; })) { $("fError").textContent="No se guardó: revisa la ubicación de la foto."; return; }
     if (!editando) datos.articulos.unshift(a);
     ultimaCat = a.categoria;
-    $("buscar").value = ""; catFiltro = ""; cerrados.delete(a.categoria);
+    if (!editando) cerrados.delete(a.categoria);
     cambio(); renderArticulos();
     if (otro && !editando) { mensaje("Agregado: " + nombre); abrirFormulario(null); }
-    else $("formArt").close();
+    else { $("formArt").close(); window.scrollTo(0, posicionFormulario); }
   } finally { botones.forEach(b => { b.disabled = false; }); }
 }
 $("fGuardar").addEventListener("click", () => guardarFormulario(false));
@@ -1468,15 +1577,28 @@ function renderTodo() { renderArticulos(); renderCategorias(); renderAjustes(); 
 snapshot = instantanea();
 renderTodo(); pintarEstado(); pintarGH();
 
-(async () => {
-  if (!soporta) return;
+let revisandoCarpeta = false;
+async function recuperarCarpeta() {
+  if (!soporta || revisandoCarpeta || conectado) return;
+  revisandoCarpeta = true;
   try {
-    const h = await BD.leer();
-    if (!h) return;
-    carpeta = h;
-    if ((await h.queryPermission({ mode: "readwrite" })) === "granted") await alConectar(); else pintarEstado();
-  } catch (e) {}
-})();
+    const guardada = carpeta || await BD.leer();
+    if (!guardada || conectado) return;
+    carpeta = guardada;
+    const permiso = await guardada.queryPermission({mode:"readwrite"});
+    if (carpeta !== guardada) return;
+    if (permiso === "granted") await alConectar();
+    else pintarEstado();
+  } catch (error) {
+    pintarEstado();
+  } finally {
+    revisandoCarpeta = false;
+  }
+}
+recuperarCarpeta();
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) recuperarCarpeta();
+});
 </script>
 </body>
 </html>
