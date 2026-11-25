@@ -1550,6 +1550,81 @@ function preguntarConflicto(texto) {
   });
 }
 
+const igual = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+
+async function elegirValor(ruta, local, remoto) {
+  const dialogo = document.createElement("dialog");
+  const titulo = document.createElement("h3");
+  titulo.textContent = ruta;
+  dialogo.append(titulo);
+  const opciones = [["Usar iPhone", local], ["Usar GitHub", remoto]];
+  for (const [texto, valor] of opciones) {
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = texto + " · " + (valor === undefined ? "Eliminar" : JSON.stringify(valor));
+    boton.style.cssText = "display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;margin:8px 0";
+    boton.onclick = () => dialogo.close(texto);
+    dialogo.append(boton);
+  }
+  const cancelar = document.createElement("button");
+  cancelar.textContent = "Conservar borrador y salir";
+  cancelar.onclick = () => dialogo.close();
+  dialogo.append(cancelar);
+  document.body.append(dialogo);
+  const cierre = new Promise(resolve => dialogo.onclose = resolve);
+  dialogo.showModal();
+  await cierre;
+  dialogo.remove();
+  const opcion = opciones.find(([texto]) => texto === dialogo.returnValue);
+  if (!opcion) throw new Error("Se conservó el borrador.");
+  return opcion[1];
+}
+
+async function combinar(base, local, remoto, ruta = "Catálogo") {
+  if (igual(local, remoto) || igual(remoto, base)) return local;
+  if (igual(local, base)) return remoto;
+  if ([base, local, remoto].every(Array.isArray)) {
+    const nombres = lista => lista.map(x => x?.nombre);
+    const listas = [base, local, remoto].map(nombres);
+    if (listas.every(l => l.every(Boolean) && new Set(l).size === l.length)) {
+      const [b,l,r] = listas;
+      const comunes = b.filter(k => l.includes(k) && r.includes(k));
+      const orden = lista => lista.filter(k => comunes.includes(k));
+      if (!igual(orden(l), comunes) && !igual(orden(r), comunes) && !igual(orden(l), orden(r)))
+        throw new Error("Los dos dispositivos reordenaron la misma lista. El borrador sigue guardado.");
+      const preferida = !igual(orden(l), comunes) || igual(r,b) ? l : r;
+      const claves = [...new Set([...preferida,...r,...l,...b])];
+      const salida = [];
+      for (const k of claves) {
+        const [antes, aqui, alla] = [base,local,remoto].map(lista => lista.find(x => x.nombre === k));
+        const valor = await combinar(antes,aqui,alla,ruta + " / " + k);
+        if (valor !== undefined) salida.push(valor);
+      }
+      return salida;
+    }
+  }
+  const objeto = x => x !== null && typeof x === "object" && !Array.isArray(x);
+  if ([base,local,remoto].every(objeto)) {
+    const salida = {};
+    const claves = new Set([...Object.keys(remoto),...Object.keys(local),...Object.keys(base)]);
+    // En un pack, las piezas y la cantidad total forman una sola decisión.
+    if (claves.has("piezas")) {
+      const existencias = x => ({cantidad:x.cantidad,piezas:x.piezas});
+      const [b,l,r] = [base,local,remoto].map(existencias);
+      const stock = igual(l,r) || igual(r,b) ? l : igual(l,b) ? r : await elegirValor(ruta + " / existencias del pack",l,r);
+      Object.assign(salida,stock);
+      claves.delete("cantidad");
+      claves.delete("piezas");
+    }
+    for (const k of claves) {
+      const v = await combinar(base[k],local[k],remoto[k],ruta + " / " + k);
+      if (v !== undefined) salida[k] = v;
+    }
+    return salida;
+  }
+  return elegirValor(ruta,local,remoto);
+}
+
 async function publicarGitHub() {
   if (!ghListo()) { toast("Primero conecta GitHub (solo se hace una vez).", "", 5000); abrirGH(); return; }
   if ($("formArt").open) { toast("Cierra el formulario del artículo antes de publicar.", "mal"); return; }
@@ -1563,26 +1638,21 @@ async function publicarGitHub() {
     const padre = ref.object.sha;
     const commitPadre = await gh(`${base}/git/commits/${padre}`);
     // Una lectura fallida NO significa que el archivo esté vacío: cancelar siempre.
-    const f = await gh(`${base}/contents/${pref}articulos.js?ref=${ghRama(c)}`);
+    const f = await gh(`${base}/contents/${pref}articulos.js?ref=${padre}`);
     if (!f || f.encoding !== "base64" || !f.content) {
       throw new Error("No pude verificar articulos.js en GitHub. Se canceló la publicación para proteger el inventario.");
     }
     const remotoDatos = datosDeTexto(decodificarB64(f.content));
     const remotoJSON = instantanea(remotoDatos);
-    const mio = instantanea();
+    let mio = instantanea();
     if (remotoJSON !== snapshot && remotoJSON !== mio) {
-      if (!sucio && fotosPendientes.size === 0) {
-        // No hay trabajo local: cargar la edición más nueva de GitHub sin pisarla.
-        datos = remotoDatos;
-        snapshot = remotoJSON;
-        renderTodo(); pintarEstado(); pintarGH();
-        toast("Se cargó el catálogo actualizado de GitHub. Ya puedes continuar editando.", "ok", 12000);
-        return;
-      }
-      // Cambios simultáneos PC/teléfono: JAMÁS ofrecer reemplazar el archivo remoto.
-      await preguntarConflicto("Tu teléfono y GitHub tienen cambios diferentes. La publicación se bloqueó para evitar que se pierdan productos, precios o cantidades. Conserva este borrador, descarga un respaldo si quieres y concilia los cambios desde tu PC antes de publicar.");
-      toast("No se publicó nada. Se conservó el borrador del teléfono.", "mal", 12000);
-      return;
+      const unido = await combinar(JSON.parse(snapshot), JSON.parse(mio), JSON.parse(remotoJSON));
+      datos = normalizar({ articulos: unido.a, categorias: unido.c, ajustes: { ...unido.aj, github: remotoDatos.ajustes.github } });
+      snapshot = remotoJSON;
+      mio = instantanea();
+      sucio = mio !== remotoJSON || fotosPendientes.size > 0;
+      await escribirBorrador();
+      renderTodo(); pintarEstado(); pintarGH();
     }
     await prepararFotosPublicacion(base, commitPadre.tree.sha, pref);
     if (remotoJSON === mio && !fotosPendientes.size) {
