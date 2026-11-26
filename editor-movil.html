@@ -106,7 +106,6 @@ dialog::backdrop { background: rgba(58, 51, 80, .5); }
 .form-campos label.check { display: flex; gap: 8px; align-items: center; }
 .form-botones { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
 #fError { color: var(--mal); font-weight: 600; min-height: 1.2em; margin-top: 8px; }
-.aviso-hoja { background: #E8F3EC; border: 1px solid #BFDCCB; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: .92rem; }
 .res { white-space: pre-wrap; margin-top: 8px; font-size: .9rem; }
 .res.ok { color: var(--ok); } .res.mal { color: var(--mal); font-weight: 600; }
 dialog { max-height: 92vh; overflow-y: auto; }
@@ -170,7 +169,11 @@ dialog { max-height: 92vh; overflow-y: auto; }
 .chk-celda input, .foto input[type=checkbox] { margin: 0; flex: none; display: block; }
 .medidas-control { display: flex; align-items: center; gap: 0; min-height: 36px; }
 .medidas-control .chk-celda { width: 56px; flex: none; }
-.medidas-control > input { min-width: 0; flex: 1; }
+.medidas-control > label { min-width: 0; flex: 1; }
+.ficha-alias, .ficha-seleccion label span, .ficha-flag span { display:none; }
+@media(max-width:900px) {
+  .ficha-seleccion label span, .ficha-flag span { display:inline; }
+}
 td { height: 1px; }
 .foto-celda { display: flex; gap: 8px; align-items: center; }
 .foto-celda .foto-campo { display: grid; gap: 6px; min-width: 0; flex: 1; }
@@ -226,7 +229,6 @@ input, select, textarea { font-size:16px; }
 .tabs { flex-wrap:nowrap; overflow-x:auto; }
 .tabs button { flex:none; }
 .sticky-tools { position:static; box-shadow:none; }
-#avisoHoja { font-size:.8rem; }
 #estado { flex-basis:100%; }
 .barra #publicar { flex:1; padding:10px; }
 .barra > #ghEstado { flex:1; }
@@ -241,13 +243,59 @@ input, select, textarea { font-size:16px; }
   #tablaArt { display:block; min-width:0; border:0; background:transparent; }
   #tablaArt thead { display:none; }
   #filas { display:grid; gap:12px; }
-  #filas tr:not(.grupo-fila) { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--borde); border-radius:14px; overflow:hidden; background:var(--tarjeta); padding:10px; gap:10px; }
+  #filas .ficha-articulo {
+    display:grid;
+    grid-template-columns:repeat(6, minmax(0, 1fr));
+    grid-template-areas:
+      "nombre nombre nombre nombre foto foto"
+      "desc desc desc desc foto foto"
+      "alias alias alias alias alias alias"
+      "cat cat cat precio precio precio"
+      "cantidad cantidad cantidad medida medida medida"
+      "broche broche visible visible camino camino"
+      "seleccion seleccion seleccion acciones acciones acciones";
+    gap:7px 8px;
+    padding:10px;
+    border:1px solid var(--borde);
+    border-radius:14px;
+    background:var(--tarjeta);
+    align-items:end;
+  }
   #filas tr td { display:block; width:auto; height:auto; border:0; padding:0; min-width:0; }
-  #filas tr:not(.grupo-fila) td::before { content:attr(data-campo); display:block; font-size:.75rem; color:var(--suave); font-weight:600; margin-bottom:4px; }
-  #filas td:nth-child(1), #filas td:nth-child(2), #filas td:nth-child(9), #filas td:nth-child(10), #filas td:nth-child(11) { grid-column:1 / -1; }
-  #filas td:first-child { text-align:left; }
-  #filas td:nth-child(6), #filas td:nth-child(7) { text-align:center; }
-  #filas .num { width:100%; }
+  #filas .ficha-articulo td[data-campo]::before,
+  #filas .ficha-articulo .medidas-control > label[data-campo]::before {
+    content:attr(data-campo); display:block; font-size:.75rem; color:var(--suave);
+    font-weight:600; margin-bottom:2px;
+  }
+  #filas .ficha-articulo .ficha-nombre { grid-area:nombre; }
+  #filas .ficha-articulo .ficha-desc { grid-area:desc; }
+  #filas .ficha-articulo .ficha-desc textarea { display:block; resize:vertical; }
+  #filas .ficha-articulo .ficha-foto { grid-area:foto; align-self:stretch; }
+  #filas .ficha-articulo .ficha-alias { display:block; grid-area:alias; }
+  #filas .ficha-articulo .ficha-cat { grid-area:cat; }
+  #filas .ficha-articulo .ficha-precio { grid-area:precio; }
+  #filas .ficha-articulo .ficha-cantidad { grid-area:cantidad; }
+  #filas .ficha-articulo .medidas, #filas .ficha-articulo .medidas-control { display:contents; }
+  #filas .ficha-articulo .medidas-control > label { grid-area:medida; min-width:0; }
+  #filas .ficha-articulo .medidas-control .chk-celda { grid-area:visible; width:auto; }
+  #filas .ficha-articulo .ficha-broche { grid-area:broche; }
+  #filas .ficha-articulo .ficha-camino { grid-area:camino; }
+  #filas .ficha-articulo .ficha-seleccion { grid-area:seleccion; text-align:left; }
+  #filas .ficha-articulo .ficha-acciones { grid-area:acciones; }
+  #filas .ficha-articulo .acciones-fila { justify-content:flex-end; }
+  .ficha-articulo .foto-celda { flex-direction:column; gap:3px; height:100%; }
+  .ficha-articulo .foto-celda .mini { display:block; width:100%; height:auto; aspect-ratio:1; }
+  .ficha-articulo .foto-celda .foto-campo { flex:0; }
+  .ficha-articulo .foto-celda label { cursor:pointer; }
+  .ficha-articulo .ficha-seleccion label { display:inline-flex; gap:5px; align-items:center; font-size:.75rem; min-height:38px; cursor:pointer; }
+  .ficha-articulo .ficha-flag { display:flex; flex-direction:column; align-items:center; gap:4px; justify-content:center; min-height:44px; text-align:center; font-size:.75rem; font-weight:600; cursor:pointer; }
+  .ficha-articulo .ficha-flag span { white-space:nowrap; }
+  #filas .ficha-articulo .precio-control { grid-template-columns:36px minmax(0,1fr) 36px; }
+  #filas .ficha-articulo .precio-control button, .ficha-articulo .acciones-fila button { min-height:38px; }
+  .ficha-articulo .precio-control button:disabled { opacity:.45; cursor:not-allowed; }
+  #filas .ficha-articulo:is(.agotado, .fila-camino) td { background:transparent; }
+  #filas .ficha-articulo.agotado { background:var(--agotado); }
+  #filas .ficha-articulo.fila-camino { background:#EAF2FC; }
   #filas .grupo-fila { display:block; }
   #filas .grupo-fila td { width:100%; background:transparent; }
   #filas .grupo-btn { border-radius:10px; background:#F5EBDD; }
@@ -280,19 +328,36 @@ input, select, textarea { font-size:16px; }
 .precio-control input::-webkit-inner-spin-button { -webkit-appearance:none }
 .pz-fila { grid-template-columns:minmax(130px,1.3fr) minmax(110px,1fr) 124px 62px minmax(100px,1fr) 36px; min-width:635px }
 @media(min-width:901px) {
-  #tablaArt th:nth-child(4), #tablaArt td:nth-child(4) { width:134px }
+  #tablaArt th:nth-child(4), #tablaArt td:nth-child(4),
+  #tablaArt th:nth-child(5), #tablaArt td:nth-child(5) { width:134px }
   #tablaArt th:nth-child(9), #tablaArt td:nth-child(9) { width:185px }
   .opciones[open] summary { font-size:.85rem }
 }
 @media(max-width:900px) {
-  .sticky-tools { padding:3px 0 5px }
-  .chips { gap:5px; padding:0; margin-bottom:4px }
-  .chip { padding:4px 10px }
-  .opciones[open] .extras { max-height:23dvh; overflow-y:auto }
-  .barra, .tabs { margin-bottom:0 }
-  .principal-busqueda { flex-wrap:nowrap; gap:4px }
-  .principal-busqueda #agregar { padding:6px 8px }
-  .busqueda { max-width:none; min-width:0 }
+  .top { padding:max(4px, env(safe-area-inset-top, 0px)) 8px 0; }
+  .top h1 { font-size:1rem; line-height:1.25; }
+  .top h1::after { font-size:.72rem; }
+  .barra { gap:3px 6px; margin:4px 0 3px; }
+  .barra #publicar, .barra #ghEstado { min-height:38px; padding:5px 7px; font-size:.85rem; margin:0; }
+  #estado, #mensaje { font-size:.76rem; line-height:1.2; }
+  #mensaje:empty { display:none; }
+  .tabs { gap:3px; }
+  .tabs button { min-height:36px; padding:4px 9px; font-size:.85rem; }
+  .layout { padding:0 8px 8px; }
+  .sticky-tools { padding:0 0 3px; }
+  .sticky-tools .deslizador { height:12px; }
+  .chips { gap:4px; padding:0; margin-bottom:3px; }
+  .chip { min-height:35px; padding:3px 8px; font-size:.82rem; }
+  .opciones { margin-top:0; }
+  .opciones summary { padding:3px 0; font-size:.82rem; }
+  .opciones[open] .extras { max-height:23dvh; overflow-y:auto; }
+  .principal-busqueda { flex-wrap:nowrap; gap:4px; }
+  .principal-busqueda #agregar { min-height:38px; padding:4px 7px; font-size:.85rem; }
+  .busqueda { max-width:none; min-width:0; }
+  .busqueda input#buscar { min-height:38px; padding-block:4px; }
+  #filas { gap:7px; }
+  #filas .grupo-btn { padding:6px 8px; font-size:.9rem; }
+
 }
 </style>
 </head>
@@ -321,7 +386,6 @@ input, select, textarea { font-size:16px; }
 <div class="layout" id="layout">
   <div>
     <section id="t-articulos">
-      <div class="aviso-hoja" id="avisoHoja" hidden>📊 Inventario enlazado a tu hoja de cálculo: en el catálogo, la <b>cantidad</b> y el <b>precio</b> de cada artículo salen de la hoja (si el nombre coincide). Los de aquí se usan solo si la hoja no está disponible.</div>
       <div class="sticky-tools">
       
       <input class="deslizador" data-desliza="chips" type="range" aria-label="Desplazar categorías" min="0" value="0" hidden>
@@ -557,17 +621,22 @@ else window.addEventListener("resize", actualizarAlturaCinta, { passive: true })
 const $ = id => document.getElementById(id);
 
 function controlPrecio(input, precioBase = () => 0) {
+  return controlNumerico(input, "Precio", 0.25, precioBase);
+}
+function controlNumerico(input, etiqueta, paso, valorBase = () => 0) {
   const grupo = document.createElement("span");
   grupo.className = "precio-control";
-  input.setAttribute("aria-label", "Precio");
+  input.setAttribute("aria-label", etiqueta);
   function boton(signo) {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = signo > 0 ? "+" : "−";
-    b.setAttribute("aria-label", signo > 0 ? "Subir 25 centavos" : "Bajar 25 centavos");
+    b.setAttribute("aria-label", (signo > 0 ? "Aumentar " : "Reducir ") + etiqueta.toLowerCase() + " en " + paso);
+    b.disabled = input.disabled;
     b.addEventListener("click", () => {
-      const antes = input.value === "" ? Number(precioBase()) || 0 : input.valueAsNumber;
-      input.value = (Math.max(0, Math.round(antes * 100) + signo * 25) / 100).toFixed(2);
+      const antes = input.value === "" ? Number(valorBase()) || 0 : input.valueAsNumber;
+      const despues = Math.max(0, Math.round(antes * 100) + signo * Math.round(paso * 100)) / 100;
+      input.value = paso === 1 ? String(despues) : despues.toFixed(2);
       input.dispatchEvent(new Event("input", { bubbles:true }));
     });
     return b;
@@ -575,7 +644,8 @@ function controlPrecio(input, precioBase = () => 0) {
   grupo.append(boton(-1), input, boton(1));
   return grupo;
 }
-for (const id of ["fPrecio", "fPrecioPack"]) {
+{
+  const id = "fPrecioPack";
   const input = $(id);
   const label = input.parentElement;
   label.htmlFor = id;
@@ -833,8 +903,9 @@ async function prepararFotosPublicacion(base,sha,pref) {
 
 /* ---------- Piezas de interfaz ---------- */
 function campo(obj, clave, o = {}) {
-  const i = document.createElement("input");
-  i.type = o.tipo || "text";
+  const i = document.createElement(o.multilinea ? "textarea" : "input");
+  if (o.multilinea) i.rows = 2;
+  else i.type = o.tipo || "text";
   if (o.clase) i.className = o.clase;
   if (i.type === "number") { i.min = 0; i.step = o.paso || 1; }
   i.value = obj[clave] ?? "";
@@ -870,8 +941,12 @@ function tdMedidas(a) {
   const i = campo(a, "medidas"); i.placeholder = "ej. 3 × 2.5 cm";
   const v = document.createElement("input"); v.type = "checkbox"; v.checked = a.verMedidas !== false; v.title = "Mostrar las medidas de este pin";
   v.addEventListener("change", () => { a.verMedidas = v.checked; cambio(); });
-  const check = document.createElement("div"); check.className = "chk-celda"; check.append(v);
-  const cont = document.createElement("div"); cont.className = "medidas-control"; cont.append(check, i);
+  const check = casillaFila(v, "Medidas", "chk-celda ficha-flag");
+  const campoMedida = document.createElement("label");
+  campoMedida.dataset.campo = "Medidas";
+  i.setAttribute("aria-label", "Medidas");
+  campoMedida.append(i);
+  const cont = document.createElement("div"); cont.className = "medidas-control"; cont.append(check, campoMedida);
   const td = celda(cont); td.className = "medidas"; return td;
 }
 function celda(...hijos) { const td = document.createElement("td"); td.append(...hijos); return td; }
@@ -1001,8 +1076,19 @@ function pintarChips() {
   cont.scrollLeft = desplazamiento;
 }
 
+function casillaFila(input, texto, clase = "") {
+  const label = document.createElement("label");
+  label.className = clase;
+  const nombre = document.createElement("span");
+  nombre.textContent = texto;
+  input.setAttribute("aria-label", texto);
+  label.append(nombre, input);
+  return label;
+}
+
 function crearFila(a) {
   const tr = document.createElement("tr");
+  tr.className = "ficha-articulo";
   const stockFila = () => Array.isArray(a.piezas) && a.piezas.length
     ? a.piezas.reduce((s, p) => s + Math.max(0, Number(p.cantidad ?? 1) || 0), 0)
     : Math.max(0, Number(a.cantidad) || 0);
@@ -1036,7 +1122,7 @@ function crearFila(a) {
 
   const chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = !!a.broche; chk.title = "Ofrece broche de seguridad";
   chk.addEventListener("change", () => { a.broche = chk.checked; cambio(); });
-  const cc = document.createElement("div"); cc.className = "chk-celda"; cc.appendChild(chk);
+  const cc = casillaFila(chk, "Broche", "chk-celda ficha-flag");
 
   const x = document.createElement("button"); x.className = "x quitar-fila"; x.textContent = "✕"; x.title = "Quitar artículo";
   x.addEventListener("click", () => {
@@ -1053,20 +1139,35 @@ function crearFila(a) {
   ed.addEventListener("click", () => abrirFormulario(a));
   const acciones = document.createElement("div"); acciones.className = "acciones-fila"; acciones.append(ed, x);
 
-  const caminoCont = document.createElement("div"); caminoCont.className = "chk-celda"; caminoCont.append(camino);
-
+  const caminoCont = casillaFila(camino, "En camino", "chk-celda ficha-flag");
+  const celdaFicha = (clase, contenido, etiqueta) => {
+    const td = celda(contenido);
+    td.className = "ficha-" + clase;
+    if (etiqueta) {
+      td.dataset.campo = etiqueta;
+      if (contenido.matches("input, select, textarea")) contenido.setAttribute("aria-label", etiqueta);
+    }
+    return td;
+  };
+  const alias = campo(a, "alias");
+  alias.placeholder = "Palabras clave";
   tr.append(
-    celda(chkSel), celda(campo(a, "nombre")), celda(sel),
-    celda(controlPrecio(campo(a, "precio", { tipo: "number", paso: "0.01", clase: "num" }))),
-    celda(cantidadCampo(a, marcar)), celda(caminoCont),
-    celda(cc), tdMedidas(a), celda(campoFoto(a, "imagen")), celda(campo(a, "descripcion")), celda(acciones)
+    celdaFicha("seleccion", casillaFila(chkSel, "Seleccionar")),
+    celdaFicha("nombre", campo(a, "nombre"), "Nombre"),
+    celdaFicha("cat", sel, "Categoría"),
+    celdaFicha("precio", controlPrecio(campo(a, "precio", { tipo: "number", paso: "0.01", clase: "num" })), "Precio"),
+    celdaFicha("cantidad", controlNumerico(cantidadCampo(a, marcar), "Cantidad", 1), "Cantidad"),
+    celdaFicha("camino", caminoCont), celdaFicha("broche", cc), tdMedidas(a),
+    celdaFicha("foto", campoFoto(a, "imagen")),
+    celdaFicha("desc", campo(a, "descripcion", { multilinea: true }), "Descripción"),
+    celdaFicha("acciones", acciones),
+    celdaFicha("alias", alias, "Alias de búsqueda")
   );
   marcar();
   return tr;
 }
 
 function renderArticulos() {
-  $("avisoHoja").hidden = !datos.ajustes.hojaUrl;
   $("medTop").checked = !!datos.ajustes.mostrarMedidas;
   $("tablaArt").classList.toggle("sin-medidas", !datos.ajustes.mostrarMedidas);
   const q = normTxt($("buscar").value);
@@ -1891,15 +1992,6 @@ async function publicarDesdeMovil() {
   try { await escribirBorrador(); }
   catch (error) { toast('No se pudo guardar la copia del dispositivo: ' + error.message, 'mal'); }
 }
-const etiquetasMovil = ['Seleccionar', 'Nombre', 'Categoría', 'Precio', 'Cantidad', 'En camino', 'Broche', 'Medidas', 'Foto', 'Descripción', 'Acciones'];
-function etiquetarTarjetasMovil() {
-  for (const fila of $('filas').children) {
-    if (fila.classList.contains('grupo-fila')) continue;
-    [...fila.cells].forEach((celda, indice) => { celda.dataset.campo = etiquetasMovil[indice]; });
-  }
-}
-new MutationObserver(etiquetarTarjetasMovil).observe($('filas'), { childList: true });
-etiquetarTarjetasMovil();
 async function iniciarMovil() {
   let cargaCorrecta = false;
   $('layout').inert = true;
