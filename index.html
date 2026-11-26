@@ -478,7 +478,7 @@ body { position:relative; isolation:isolate; background-image:none; }
 .capy-lugar-8 { top:1px;right:1%; }
 .capy-lugar-9 { top:1px;left:1%; }
 .capy-lugar-1 svg,.capy-lugar-4 svg,.capy-lugar-6 svg,.capy-lugar-8 svg { transform:scaleX(-1); }
-.articulo:has(.capy-lugar-2)::before,.articulo:has(.capy-lugar-6)::before { content:"";position:absolute;inset:0;background:var(--tarjeta);border-radius:inherit;z-index:0;pointer-events:none; }
+.articulo:has(.capy-lugar-2)::before,.articulo:has(.capy-lugar-6)::before { content:"";position:absolute;inset:0;background:inherit;border-radius:inherit;z-index:0;pointer-events:none; }
 @media(max-width:520px) { .capy-lugar-2,.capy-lugar-6 { top:-19px; } }
 
 /* Approved kawaii artwork: original pixels, mirrored only for direction. */
@@ -493,6 +493,37 @@ body { position:relative; isolation:isolate; background-image:none; }
  .capy-carrito { width:48px; height:38px; top:-30px; }
 }
 .sin-deco .articulo { padding-top:10px; padding-bottom:14px; }
+
+/* ===== Fondos de tarjetas por categoría ===== */
+.articulo[data-categoria="Música"] {
+  background: #E8E0F4;
+  border-color: #D9CDEC;
+}
+.articulo[data-categoria="Anime"] {
+  background: #F7E0EA;
+  border-color: #EFCBD9;
+}
+.articulo[data-categoria="Juegos"] {
+  background: #E3EFD8;
+  border-color: #CEE2C2;
+}
+.articulo[data-categoria="Series"] {
+  background: #DCEAF7;
+  border-color: #C8DCEC;
+}
+.articulo[data-categoria="Películas"] {
+  background: #F7E8CB;
+  border-color: #EBD9AF;
+}
+.articulo[data-categoria="Otros"] {
+  background: #E9E4DC;
+  border-color: #D9D0C5;
+}
+.articulo[data-categoria]:hover,
+.articulo[data-categoria]:focus-visible {
+  border-color: var(--acento);
+}
+/* El adorno de fondo de algunas capibaras respeta el color de su tarjeta. */
 </style>
 </head>
 
@@ -745,6 +776,7 @@ function pintarCuadricula() {
     const boton = document.createElement("button");
     boton.className = "articulo" + (e.cls === "agotado" ? " sin-stock" : "");
     boton.dataset.nombre = a.nombre;
+    boton.dataset.categoria = a.categoria;
     boton.innerHTML = `${decorarTarjeta(a)}${fotoHTML(a)}
       <div class="nombre">${esc(a.nombre)}</div>
       ${esPack(a) ? '<div class="sub">📦 Pack · elige tus pines</div>' : ""}
