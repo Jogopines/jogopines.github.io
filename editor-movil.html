@@ -124,6 +124,45 @@ dialog { max-height: 92vh; overflow-y: auto; }
 .pz-rapido input { width: 64px; display: inline-block; margin: 0 4px; }
 .pz-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
+
+/* --- formulario compacto de artículo: foto, alias y controles --- */
+#formArt { width: min(860px, 96vw); max-height: 94dvh; overflow-y: auto; overscroll-behavior: contain; }
+#formArt .form-art { padding: 14px; }
+#formArt .form-art h2 { margin-bottom: 10px; }
+.form-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(132px, 40%); gap: 10px; align-items: start; }
+.form-hero-campos { display: grid; gap: 10px; min-width: 0; }
+.form-field { display: block; min-width: 0; font-weight: 700; }
+.form-field input, .form-field textarea { display: block; width: 100%; margin-top: 4px; font-weight: 400; }
+.form-field textarea { min-height: 78px; resize: vertical; }
+.form-foto { min-width: 0; }
+.form-prev { width: 100%; max-width: none; aspect-ratio: 1 / 1; }
+.form-foto .btn-foto-grande { width: 100%; margin-top: 7px; padding: 6px 3px; font-size: .78rem; }
+.form-foto small { overflow-wrap: anywhere; font-size: .76rem; }
+.form-alias { display: block; margin: 12px 0; font-weight: 700; }
+.form-alias input { display: block; width: 100%; margin-top: 4px; font-weight: 400; }
+.form-alias small { display: block; margin-top: 4px; color: var(--suave); font-size: .78rem; font-weight: 400; }
+.form-datos-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 9px 10px; align-items: end; }
+.form-datos-grid > label, .form-control { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-weight: 700; }
+.form-datos-grid > label > input, .form-datos-grid > label > select { width: 100%; min-width: 0; margin: 0; font-weight: 400; }
+.form-control > span { display: block; }
+.form-stepper { display: grid; grid-template-columns: 31px minmax(0, 1fr) 31px; gap: 3px; align-items: center; min-width: 0; }
+.form-stepper button { min-width: 0; min-height: 38px; padding: 5px 0; }
+.form-stepper input { width: 100%; min-width: 0; margin: 0; padding: 6px 4px; text-align: center; font-weight: 400; }
+.form-stepper input::-webkit-inner-spin-button, .form-stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.form-stepper input[type=number] { appearance: textfield; }
+.form-stepper button:disabled { opacity: .4; cursor: not-allowed; }
+.form-flags { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; align-items: stretch; margin-top: 12px; padding: 9px 4px; border: 1px solid var(--borde); border-radius: 12px; background: var(--fondo); }
+.form-flag { display: grid; grid-template-rows: minmax(2.4em, auto) 22px; justify-items: center; align-items: center; gap: 5px; min-width: 0; text-align: center; font-size: .8rem; font-weight: 700; }
+.form-flag span { display: flex; align-items: center; justify-content: center; min-height: 2.4em; line-height: 1.15; }
+.form-flag input { width: 20px; height: 20px; margin: 0; }
+.form-encargo { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-weight: 700; }
+.form-encargo input { width: 18px; height: 18px; margin: 0; flex: none; }
+.nota-camino-form { display: block; margin: 7px 0 0 26px; color: var(--suave); font-size: .8rem; }
+@media (max-width: 380px) {
+  .form-hero { grid-template-columns: minmax(0, 1fr) 124px; }
+  .form-flag { font-size: .74rem; }
+}
+
 /* --- tabla: casillas centradas y fotos grandes --- */
 #tablaArt[data-fotos="s"] { --mini: 44px; } #tablaArt[data-fotos="m"] { --mini: 72px; }
 #tablaArt[data-fotos="l"] { --mini: 96px; } #tablaArt[data-fotos="xl"] { --mini: 140px; }
@@ -385,29 +424,60 @@ input, select, textarea { font-size:16px; }
 <dialog id="formArt">
   <div class="form-art">
     <h2 id="formTitulo">Agregar artículo</h2>
-    <div class="form-cuerpo">
+    <div class="form-hero">
+      <div class="form-hero-campos">
+        <label class="form-field">Nombre *
+          <input id="fNombre" placeholder="ej. Pin Snoopy durmiendo">
+        </label>
+        <label class="form-field">Descripción
+          <textarea id="fDesc" rows="2" placeholder="Una o dos líneas"></textarea>
+        </label>
+      </div>
       <div class="form-foto">
         <div class="form-prev" id="fPrev">📷</div>
         <label class="btn-foto-grande">📁 Elegir foto<input type="file" id="fFoto" accept="image/*" hidden></label>
         <small id="fFotoNombre"></small>
       </div>
-      <div class="form-campos">
-        <label>Nombre *<input id="fNombre" placeholder="ej. Pin Snoopy durmiendo"></label>
-        <label>Nombre corto (solo editor)<input id="fAlias" placeholder="Ej. Cocodrilo Loki"></label>
-        <label>Categoría<select id="fCat"></select></label>
-        <div class="dos">
-          <label>Precio<input id="fPrecio" type="number" min="0" step="0.01" placeholder="ej. 1.50"></label>
-          <label>Cantidad<input id="fCantidad" type="number" min="0" step="1"></label>
-        </div>
-        <label>Descripción<textarea id="fDesc" rows="3" placeholder="Una o dos líneas"></textarea></label>
-        <label>Medidas (opcional)<input id="fMedidas" placeholder="ej. 3 × 2.5 cm"></label>
-        <label class="check"><input type="checkbox" id="fVerMedidas"> Mostrar las medidas de este pin</label>
-        <label class="check"><input type="checkbox" id="fBroche"> Ofrece broche de seguridad</label>
-        <label class="check"><input type="checkbox" id="fEncargo"> Permitir pedido especial si se agota</label>
-        <label class="check"><input type="checkbox" id="fEnCamino"> Viene en camino</label>
-        <small class="nota-camino-form">Si todavía quedan unidades, seguirán apareciendo como disponibles. Cuando recibas la reposición, desmarca esta casilla.</small>
-      </div>
     </div>
+
+    <label class="form-alias">Alias de búsqueda (solo editor)
+      <input id="fAlias" placeholder="Ej. coco, Loki, cocodrilo">
+      <small>Palabras clave para encontrar este pin rápidamente desde la lupa.</small>
+    </label>
+
+    <div class="form-datos-grid">
+      <label class="form-cat">Categoría
+        <select id="fCat"></select>
+      </label>
+      <div class="form-control form-price">
+        <span>Precio</span>
+        <div class="form-stepper">
+          <button type="button" id="fPrecioMenos" aria-label="Bajar precio en 0.25">−</button>
+          <input id="fPrecio" type="number" min="0" step="0.01" placeholder="2.50">
+          <button type="button" id="fPrecioMas" aria-label="Subir precio en 0.25">+</button>
+        </div>
+      </div>
+      <div class="form-control form-quantity">
+        <span>Cantidad</span>
+        <div class="form-stepper">
+          <button type="button" id="fCantidadMenos" aria-label="Reducir cantidad">−</button>
+          <input id="fCantidad" type="number" min="0" step="1" placeholder="1">
+          <button type="button" id="fCantidadMas" aria-label="Aumentar cantidad">+</button>
+        </div>
+      </div>
+      <label class="form-measure">Medidas
+        <input id="fMedidas" placeholder="3 × 2.5 cm">
+      </label>
+    </div>
+
+    <div class="form-flags" role="group" aria-label="Opciones rápidas del artículo">
+      <label class="form-flag"><span>Broche</span><input type="checkbox" id="fBroche"></label>
+      <label class="form-flag"><span>Mostrar medidas</span><input type="checkbox" id="fVerMedidas"></label>
+      <label class="form-flag"><span>En camino</span><input type="checkbox" id="fEnCamino"></label>
+    </div>
+    <label class="form-encargo"><input type="checkbox" id="fEncargo"> Permitir pedido especial si se agota</label>
+    <small class="nota-camino-form">Si todavía quedan unidades, seguirán apareciendo como disponibles. Cuando recibas la reposición, desmarca «En camino».</small>
+
     <details class="pz-box" id="fPiezasBox">
       <summary>📦 Piezas del pack (opcional)</summary>
       <p class="pz-nota">Si este artículo es un pack, escribe cuántos pines trae y presiona <b>Crear</b>: se crean campos vacíos con las guías tenues «Pin 1», «Pin 2», «Pin 3»... Escribe o pega directamente el nombre y completa las medidas. El cliente podrá elegir cuáles llevar y el precio cambia según su elección. Cada pieza cuesta el <b>Precio</b> de arriba (por pin), salvo que le pongas otro. La <b>cantidad</b> del artículo se calcula sola sumando las piezas disponibles.</p>
@@ -473,6 +543,7 @@ input, select, textarea { font-size:16px; }
 <div class="toast" id="toast" hidden></div>
 
 <script src="articulos.js"></script>
+<script src="aliases-articulos.js"></script>
 <script>
 // Mantiene la cinta de herramientas justo debajo de la cabecera fija.
 const topEditor = document.querySelector(".top");
@@ -1089,8 +1160,28 @@ function parsePiezas(texto) {
 function sincCantidadForm() {
   const hay = fPz.length > 0;
   $("fCantidad").disabled = hay;
+  $("fCantidadMenos").disabled = hay;
+  $("fCantidadMas").disabled = hay;
   if (hay) $("fCantidad").value = fPz.reduce((s, p) => s + Math.max(0, Number(p.cantidad ?? 1) || 0), 0);
 }
+function ajustarPasoForm(id, paso, decimal = false) {
+  const input = $(id);
+  if (!input || input.disabled) return;
+  let valor = Number(input.value);
+  if (!Number.isFinite(valor)) valor = 0;
+  valor = Math.max(0, valor + paso);
+  if (decimal) {
+    valor = Math.round((valor + Number.EPSILON) * 100) / 100;
+    input.value = valor.toFixed(2);
+  } else {
+    input.value = String(Math.max(0, Math.floor(valor)));
+  }
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+$("fPrecioMenos").addEventListener("click", () => ajustarPasoForm("fPrecio", -0.25, true));
+$("fPrecioMas").addEventListener("click", () => ajustarPasoForm("fPrecio", 0.25, true));
+$("fCantidadMenos").addEventListener("click", () => ajustarPasoForm("fCantidad", -1, false));
+$("fCantidadMas").addEventListener("click", () => ajustarPasoForm("fCantidad", 1, false));
 function renderPiezasForm() {
   const cont = $("fPiezas"); cont.innerHTML = "";
   if (fPz.length) {
@@ -1470,6 +1561,45 @@ function datosDeTexto(texto) {
   return normalizar(d);
 }
 
+// La importación masiva solo se ejecuta al abrir con ?importar-aliases=1.
+// Los alias existentes nunca se sobrescriben.
+const modoImportarAliases = new URLSearchParams(location.search).get("importar-aliases") === "1";
+
+function aplicarAliasesIniciales() {
+  if (!modoImportarAliases) return null;
+  const base = window.JOGOPINES_ALIAS_BASE;
+  if (!Array.isArray(base) || !base.length) {
+    return { error: "No se pudo cargar aliases-articulos.js." };
+  }
+
+  const porNombre = new Map(base.map(item => [item.nombre, item.alias]));
+  let aplicados = 0;
+  let yaExistian = 0;
+  let coincidencias = 0;
+
+  for (const articulo of datos.articulos) {
+    const alias = porNombre.get(articulo.nombre);
+    if (!alias) continue;
+    coincidencias++;
+    if (typeof articulo.alias === "string" && articulo.alias.trim()) {
+      yaExistian++;
+      continue;
+    }
+    articulo.alias = alias;
+    aplicados++;
+  }
+
+  if (aplicados) sucio = true;
+  return {
+    aplicados,
+    yaExistian,
+    coincidencias,
+    aliasDeLaListaSinArticulo: Math.max(0, base.length - coincidencias),
+    articulosSinAliasEnLaBase: Math.max(0, datos.articulos.length - coincidencias),
+    baseTotal: base.length
+  };
+}
+
 let tmToast;
 function toast(texto, tipo, ms, html) {
   const t = $("toast");
@@ -1804,15 +1934,52 @@ async function iniciarMovil() {
       snapshot = instantanea();
       $('estado').textContent = 'Catálogo cargado · los cambios se guardan como borrador';
     }
+    const resultadoImportacionAliases = aplicarAliasesIniciales();
     renderTodo();
     pintarGH();
     cargaCorrecta = true;
+
+    // Guardar el borrador solo después de habilitar el editor.
+    if (modoImportarAliases && resultadoImportacionAliases) {
+      window.__resultadoImportacionAliases = resultadoImportacionAliases;
+    }
   } catch (error) {
     toast('No se pudo cargar el catálogo: ' + error.message + '. Revisa tu conexión y recarga.', 'mal', 18000);
   } finally {
     listoMovil = cargaCorrecta;
     $('layout').inert = !cargaCorrecta;
     $('publicar').disabled = !cargaCorrecta;
+  }
+
+  const resultado = window.__resultadoImportacionAliases;
+  if (cargaCorrecta && modoImportarAliases && resultado) {
+    delete window.__resultadoImportacionAliases;
+    if (resultado.error) {
+      toast(resultado.error + ' No se modificó ningún artículo.', 'mal', 14000);
+    } else if (resultado.aplicados > 0) {
+      try {
+        await escribirBorrador();
+        pintarEstado();
+        const avisoExtra = resultado.aliasDeLaListaSinArticulo
+          ? ` ${resultado.aliasDeLaListaSinArticulo} alias de la lista no encontraron un artículo con el mismo nombre y quedaron sin aplicar.`
+          : resultado.articulosSinAliasEnLaBase
+            ? ` ${resultado.articulosSinAliasEnLaBase} artículo(s) del catálogo no tienen alias en esta lista.`
+            : "";
+        toast(
+          `Se añadieron alias a ${resultado.aplicados} artículo(s); ${resultado.yaExistian} ya tenían alias y se conservaron. El borrador quedó guardado en este dispositivo. Revisa y pulsa «Publicar» para subirlos.${avisoExtra}`,
+          "ok",
+          18000
+        );
+      } catch (error) {
+        toast('Los alias están en memoria, pero no se pudo guardar el borrador: ' + error.message + '. No cierres esta página; pulsa Publicar.', 'mal', 18000);
+      }
+    } else {
+      toast(
+        `No se añadieron alias nuevos. ${resultado.yaExistian} artículo(s) ya tenían alias; ${resultado.aliasDeLaListaSinArticulo} alias de la lista no encontraron coincidencia.`,
+        "ok",
+        14000
+      );
+    }
   }
 }
 // Cuando se vuelve al editor tras usar la PC, traer lo nuevo solo si no hay cambios locales.
