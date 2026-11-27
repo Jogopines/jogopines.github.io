@@ -360,6 +360,94 @@ input, select, textarea { font-size:16px; }
 
 }
 </style>
+<style>
+/* Inventario del catálogo */
+#inventario {
+  width: min(72rem, calc(100% - 2rem)); max-width: none;
+  max-height: min(88dvh, 56rem); padding: 0;
+  border: 1px solid var(--borde); border-radius: 20px;
+  background: var(--fondo); color: var(--texto);
+  box-shadow: 0 22px 65px #3a335036;
+}
+#inventario::backdrop { background: #30263c75; }
+#inventario .inv-panel { padding: 0 clamp(12px, 3vw, 30px) 24px; }
+#inventario .inv-cabecera {
+  position: sticky; top: 0; z-index: 2; background: var(--fondo);
+  display: flex; justify-content: space-between; align-items: start; gap: 12px;
+  padding: 17px 0 13px; border-bottom: 1px solid var(--borde);
+}
+#inventario h2, #inventario h3 { margin: 0; color: var(--texto); }
+#inventario h2 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.16; }
+#inventario h3 { font-size: 1.07rem; }
+#invOrigen, #inventario .inv-nota { margin: 5px 0 0; color: var(--suave); font-size: .87rem; }
+#invCerrar { padding: 0; width: 39px; height: 39px; flex: 0 0 39px; }
+#inventario .inv-herramientas, #inventario .inv-origen, #inventario .inv-acciones {
+  display: flex; flex-wrap: wrap; gap: 7px; align-items: center;
+}
+#inventario .inv-herramientas { justify-content: space-between; margin: 14px 0; }
+#inventario .inv-origen button, #inventario .inv-acciones button { padding: 8px 11px; font-size: .84rem; }
+#inventario .inv-origen [aria-pressed="true"] { color: var(--acento); background: #f4e5e7; border-color: #cfabb6; }
+#invAviso { padding: 10px 12px; margin: 0 0 13px; border-radius: 10px; background: #f2e7d9; font-size: .87rem; }
+#inventario .inv-resumen { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+#inventario .inv-cifra {
+  display: grid; align-content: start; gap: 3px; min-height: 97px; padding: 10px 12px;
+  width: 100%; text-align: left; white-space: normal; background: var(--tarjeta);
+  border: 1px solid var(--borde); border-radius: 12px; box-shadow: none;
+}
+#inventario .inv-cifra b { color: var(--acento); font-size: 1.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+#inventario .inv-cifra span { font-size: .87rem; font-weight: 800; }
+#inventario .inv-cifra small { color: var(--suave); line-height: 1.22; font-size: .73rem; }
+#inventario .inv-cifra[aria-pressed="true"] { border-color: #b78394; background: #faeff0; }
+#inventario .inv-categorias, #inventario .inv-detalle {
+  margin-top: 12px; border: 1px solid var(--borde); border-radius: 12px;
+  background: var(--tarjeta); padding: 12px;
+}
+#inventario .inv-categorias summary { cursor: pointer; font-weight: 800; }
+#inventario .inv-tabla { overflow-x: auto; margin-top: 7px; }
+#inventario table { width: 100%; min-width: 525px; border-collapse: collapse; font-size: .86rem; background: transparent; }
+#inventario th, #inventario td { position: static; text-align: right; padding: 8px; white-space: nowrap; border-bottom: 1px solid var(--borde); }
+#inventario th:first-child, #inventario td:first-child { text-align: left; }
+#inventario .inv-filtros { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; margin: 10px 0; }
+#inventario .inv-filtros label { display: grid; gap: 4px; min-width: 0; font-size: .78rem; font-weight: 800; }
+#inventario .inv-filtros input, #inventario .inv-filtros select { width: 100%; min-width: 0; font-size: 1rem; }
+#inventario .inv-fila {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 6px 13px;
+  padding: 10px 0; border-top: 1px solid var(--borde);
+}
+#inventario .inv-fila:first-child { margin-top: 8px; }
+#inventario .inv-ficha { min-width: 0; overflow-wrap: anywhere; }
+#inventario .inv-ficha p, #inventario .inv-fila details { margin: 3px 0 0; font-size: .82rem; color: var(--suave); }
+#inventario .inv-estado {
+  border-radius: 99px; padding: 3px 8px; background: #e6efe6;
+  color: #345b49; font-weight: 800; font-size: .75rem; text-align: center;
+}
+#inventario .inv-estado[data-estado="agotado"] { background: #f8e2e8; color: #7f3047; }
+#inventario .inv-estado[data-estado="camino"], #inventario .inv-estado[data-estado="escaso"] { background: #f4e8d6; color: #614625; }
+#inventario .inv-fila button { justify-self: end; padding: 5px 9px; font-size: .77rem; }
+#inventario .inv-fila details { grid-column: 1 / -1; }
+#inventario .inv-fila details summary { cursor: pointer; font-weight: 750; }
+#inventario .inv-fila ul { padding-left: 18px; margin: 5px 0 0; }
+#inventario [hidden] { display: none !important; }
+@media (max-width: 700px) {
+  #inventario { width: calc(100% - 16px); max-height: 94dvh; border-radius: 15px; }
+  #inventario .inv-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #inventario .inv-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #inventario .inv-filtros label:first-child { grid-column: 1 / -1; }
+  #inventario .inv-cifra { min-height: 82px; }
+}
+@media print {
+  body.inv-imprimiendo > :not(#invInforme), body.inv-imprimiendo #inventario::backdrop { display: none !important; }
+  body.inv-imprimiendo { background: #fff; color: #26212b; margin: 0; }
+  #invInforme:not([hidden]) { display: block !important; font-size: 10pt; }
+  #invInforme h1 { color: #653042; font-size: 18pt; margin: 0 0 4px; }
+  #invInforme h2 { font-size: 12pt; margin: 14px 0 7px; break-after: avoid; }
+  #invInforme p { margin: 5px 0; }
+  #invInforme table { width: 100%; border-collapse: collapse; }
+  #invInforme tr { break-inside: avoid; }
+  #invInforme th, #invInforme td { position: static; text-align: left; border-bottom: 1px solid #ddd; padding: 4px 5px; }
+  #invInforme th:last-child, #invInforme td:last-child { text-align: right; }
+}
+</style>
 </head>
 <body>
 
@@ -395,7 +483,7 @@ input, select, textarea { font-size:16px; }
         
         <label class="tam-fotos">Fotos <select id="tamFotos"><option value="s">Pequeñas</option><option value="m">Medianas</option><option value="l" selected>Grandes</option><option value="xl">Muy grandes</option></select></label>
         
-        <button id="detectar" title="Convierte en piezas los sets cuyas medidas traen varios nombres">📦 Detectar packs</button>
+        <button id="detectar" type="button">Revisar inventario</button>
         <label class="chk-med"><input type="checkbox" id="medTop"> 📏 Mostrar medidas en el catálogo</label>
         <span id="conteo"></span>
       </div>
@@ -549,6 +637,7 @@ input, select, textarea { font-size:16px; }
       <div class="pz-barra">
         <span class="pz-rapido">Crear <input type="number" id="fNPiezas" min="1" max="60" value="3"> pines de una vez <button type="button" id="fCrearN">Crear</button></span>
         <button type="button" id="fAddPieza">+ Agregar una pieza</button>
+        <button type="button" id="fDesdeMedidas">Crear piezas desde Medidas</button>
       </div>
       <details class="pz-pegar"><summary>Pegar una lista de nombres (opcional)</summary>
         <p class="pz-nota" style="margin:6px 0">Si ya tienes los nombres escritos, pégalos aquí, uno por línea. Si quieres, agrega las medidas así: «Nombre: 3 × 3 cm».</p>
@@ -564,6 +653,50 @@ input, select, textarea { font-size:16px; }
     </div>
   </div>
 </dialog>
+
+<dialog id="inventario" aria-labelledby="invTitulo">
+  <div class="inv-panel">
+    <header class="inv-cabecera">
+      <div>
+        <h2 id="invTitulo">Inventario del catálogo</h2>
+        <p id="invOrigen" role="status"></p>
+      </div>
+      <button id="invCerrar" type="button" aria-label="Cerrar inventario">✕</button>
+    </header>
+    <div class="inv-herramientas">
+      <div class="inv-origen" role="group" aria-label="Origen de los datos">
+        <button type="button" data-inv-origen="editor" aria-pressed="true">En el editor</button>
+        <button type="button" data-inv-origen="web" aria-pressed="false">Web publicada</button>
+      </div>
+      <div class="inv-acciones">
+        <button id="invFotos" type="button">Comprobar fotos</button>
+        <button id="invImprimir" class="principal" type="button">Imprimir disponibles</button>
+      </div>
+    </div>
+    <p id="invAviso" role="status" hidden></p>
+    <div id="invContenido">
+      <div id="invResumen" class="inv-resumen" aria-label="Totales del catálogo"></div>
+      <details class="inv-categorias">
+        <summary>Existencias por categoría</summary>
+        <div class="inv-tabla"><table>
+          <thead><tr><th scope="col">Categoría</th><th scope="col">Unidades</th><th scope="col">Packs</th><th scope="col">En camino</th><th scope="col">Agotados</th><th scope="col">Sin foto</th></tr></thead>
+          <tbody id="invCategorias"></tbody>
+        </table></div>
+      </details>
+      <section class="inv-detalle" aria-labelledby="invDetalleTitulo">
+        <h3 id="invDetalleTitulo">Detalle del inventario</h3>
+        <div class="inv-filtros">
+          <label>Buscar<input id="invBuscar" type="search" placeholder="Nombre o pieza del pack"></label>
+          <label>Categoría<select id="invCategoria"></select></label>
+          <label>Mostrar<select id="invFiltro"></select></label>
+        </div>
+        <p id="invResultados" class="inv-nota" role="status"></p>
+        <div id="invLista"></div>
+      </section>
+    </div>
+  </div>
+</dialog>
+<div id="invInforme" hidden></div>
 
 <dialog id="lightbox"><img id="lbImg" alt=""><p id="lbTit"></p></dialog>
 
@@ -923,19 +1056,6 @@ function fijarMedidas(v) {
   if (medChkRef) medChkRef.checked = v;
   $("tablaArt").classList.toggle("sin-medidas", !v);
 }
-$("detectar").addEventListener("click", () => {
-  const conv = [], dudosos = [];
-  datos.articulos.forEach(a => {
-    if (Array.isArray(a.piezas) && a.piezas.length) return;
-    const ps = parsePiezas(a.medidas || "").filter(p => p.medidas);
-    if (ps.length < 2) return;
-    const n = Number(a.cantidad);
-    if (n === ps.length || n === 0) { a.piezas = ps.map(p => ({ ...p, imagen: "", cantidad: n === 0 ? 0 : 1 })); conv.push(a.nombre); }
-    else dudosos.push(`${a.nombre} (${ps.length} piezas, cantidad ${n})`);
-  });
-  if (conv.length) { cambio(); renderArticulos(); }
-  mensaje(`Packs convertidos: ${conv.length}.` + (dudosos.length ? ` Revisa a mano (✏️ → Piezas → «Crear piezas desde el campo Medidas»): ${dudosos.join("; ")}.` : ""), dudosos.length > 0);
-});
 $("medTop").addEventListener("change", () => { fijarMedidas($("medTop").checked); cambio(); });
 function tdMedidas(a) {
   const i = campo(a, "medidas"); i.placeholder = "ej. 3 × 2.5 cm";
@@ -2104,6 +2224,430 @@ document.addEventListener('visibilitychange', () => {
 });
 iniciarMovil();
 
+</script>
+<script>
+/* Inventario del catálogo. La consulta nunca modifica los artículos del editor. */
+(() => {
+  const dialogo = $("inventario");
+  const selector = $("invFiltro");
+  const porCategoria = $("invCategoria");
+  const buscador = $("invBuscar");
+  const titulos = {
+    todos: "Todas las fichas", disponibles: "Disponibles", packs: "Packs",
+    camino: "En camino", agotados: "Agotados", bajo: "Stock bajo",
+    incompletos: "Packs incompletos", conFoto: "Con foto principal",
+    sinFoto: "Sin foto principal", piezasSinFoto: "Piezas sin foto", fotoFalla: "Fotos que no abren"
+  };
+  const numero = valor => {
+    const n = Number(valor);
+    return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+  };
+  const listaPiezas = a => Array.isArray(a.piezas) ? a.piezas : [];
+  const texto = v => String(v ?? "").trim();
+  const clave = v => normTxt(v).replace(/[^\p{L}\p{N}\s]/gu, "").replace(/\s+/g, " ").trim();
+  const suma = filas => filas.reduce((n, fila) => n + fila.stock, 0);
+  const nf = new Intl.NumberFormat("es-PA");
+  const unidad = n => n === 1 ? "1 unidad" : `${nf.format(n)} unidades`;
+  let origen = "editor", catalogo, filas = [], categorias = [], urlFotos = document.baseURI;
+  let peticion, revisar, avisoFuente, comprobaciones = new Map(), fuente = "";
+  const nodo = (etiqueta, valor, clase) => {
+    const n = document.createElement(etiqueta);
+    if (valor != null) n.textContent = valor;
+    if (clase) n.className = clase;
+    return n;
+  };
+  const boton = (valor, accion, clase) => {
+    const b = nodo("button", valor, clase);
+    b.type = "button";
+    b.addEventListener("click", accion);
+    return b;
+  };
+  const opcion = (valor, etiqueta) => {
+    const o = nodo("option", etiqueta);
+    o.value = valor;
+    return o;
+  };
+
+  function fichas(d) {
+    return d.articulos.map(a => {
+      const piezas = listaPiezas(a).map((p, i) => ({
+        nombre: texto(p.nombre) || `Pieza ${i + 1}`, stock: numero(p.cantidad ?? 1),
+        foto: texto(p.imagen)
+      }));
+      const pack = piezas.length > 0;
+      const stock = pack ? suma(piezas) : numero(a.cantidad ?? (origen === "web" ? 99 : 1));
+      const variantes = piezas.filter(p => p.stock > 0).length;
+      const camino = !!a.enCamino;
+      const alertas = [];
+      if (stock > 0 && stock <= (pack ? 3 : 2)) alertas.push(pack ? "Pocas piezas" : "Pocas unidades");
+      if (pack && variantes > 0 && variantes <= 2) alertas.push("Pocos diseños");
+      return {
+        articulo: a, nombre: texto(a.nombre) || "Sin nombre", categoria: texto(a.categoria) || "Sin categoría",
+        foto: texto(a.imagen), piezas, pack, stock, variantes, camino, alertas,
+        agotado: stock === 0 && !camino, sinFotosPiezas: piezas.filter(p => !p.foto).length,
+        sets: pack && Number(a.precioPack) > 0 ? Math.min(...piezas.map(p => p.stock)) : null
+      };
+    });
+  }
+
+  const rutaFoto = ruta => {
+    try {
+      const url = new URL(ruta, urlFotos);
+      return /^(https?:|file:|blob:|data:)$/.test(url.protocol) ? url.href : "";
+    } catch { return ""; }
+  };
+  function fotoFalla(ruta) {
+    return !!ruta && comprobaciones.get(ruta) === "fallo";
+  }
+
+  function coincide(f, filtro) {
+    switch (filtro) {
+      case "disponibles": return f.stock > 0;
+      case "packs": return f.pack;
+      case "camino": return f.camino;
+      case "agotados": return f.agotado;
+      case "bajo": return f.alertas.length > 0;
+      case "incompletos": return f.stock > 0 && f.pack && f.variantes < f.piezas.length;
+      case "conFoto": return !!f.foto;
+      case "sinFoto": return !f.foto;
+      case "piezasSinFoto": return f.sinFotosPiezas > 0;
+      case "fotoFalla": return fotoFalla(f.foto) || f.piezas.some(p => fotoFalla(p.foto));
+      default: return true;
+    }
+  }
+
+  function resumen() {
+    const contar = filtro => filas.filter(f => coincide(f, filtro)).length;
+    const porPieza = filas.reduce((n, f) => n + f.piezas.length, 0);
+    const faltan = filas.reduce((n, f) => n + f.sinFotosPiezas, 0);
+    const individuales = suma(filas.filter(f => !f.pack));
+    const caminoSinStock = filas.filter(f => f.camino && !f.stock).length;
+    const tarjetas = [
+      ["disponibles", suma(filas), "Unidades disponibles", `${individuales} sueltas · ${suma(filas) - individuales} en packs`],
+      ["todos", filas.length, "Fichas del catálogo", `${contar("disponibles")} con stock`],
+      ["packs", contar("packs"), "Packs", `${filas.filter(f => f.pack && f.stock > 0).length} con stock`],
+      ["camino", contar("camino"), "En camino", `${caminoSinStock} sin stock · ${contar("camino") - caminoSinStock} con stock`],
+      ["agotados", contar("agotados"), "Agotados", "Sin stock ni reposición marcada"],
+      ["bajo", contar("bajo"), "Stock bajo", "Pocas unidades o variantes"],
+      ["incompletos", contar("incompletos"), "Packs incompletos", "Con stock, alguna variante agotada"],
+      ["conFoto", contar("conFoto"), "Con foto principal", `${filas.length} fichas en total`],
+      ["sinFoto", contar("sinFoto"), "Sin foto principal", "Fichas por fotografiar"],
+      ["piezasSinFoto", faltan, "Piezas sin foto propia", `${porPieza - faltan} de ${porPieza} tienen foto propia`]
+    ];
+    $("invResumen").replaceChildren(...tarjetas.map(([id, total, nombre, nota]) => {
+      const b = boton(null, () => {
+        selector.value = id;
+        porCategoria.value = "";
+        buscador.value = "";
+        detalle();
+        $("invDetalleTitulo").scrollIntoView({ block: "nearest" });
+      }, "inv-cifra");
+      b.dataset.filtro = id;
+      b.append(nodo("b", nf.format(total)), nodo("span", nombre), nodo("small", nota));
+      return b;
+    }));
+  }
+
+  function tablaCategorias() {
+    $("invCategorias").replaceChildren(...categorias.map(cat => {
+      const grupo = filas.filter(f => f.categoria === cat);
+      const tr = nodo("tr");
+      const nombre = nodo("th", cat);
+      nombre.scope = "row";
+      tr.append(nombre, ...[suma(grupo), ...["packs", "camino", "agotados", "sinFoto"].map(
+        filtro => grupo.filter(f => coincide(f, filtro)).length
+      )].map(n => nodo("td", nf.format(n))));
+      return tr;
+    }));
+  }
+
+  function fila(f, filtro) {
+    const n = nodo("article", null, "inv-fila");
+    const ficha = nodo("div", null, "inv-ficha");
+    const info = [f.categoria, unidad(f.stock)];
+    if (f.pack) info.push(`${f.variantes} de ${f.piezas.length} diseños disponibles`);
+    if (f.sets != null) info.push(`${f.sets} sets completos`);
+    if (!f.foto) info.push("Sin foto principal");
+    if (fotoFalla(f.foto)) info.push("Foto principal no abre");
+    if (f.sinFotosPiezas) info.push(`${f.sinFotosPiezas} piezas sin foto propia`);
+    ficha.append(nodo("strong", f.nombre), nodo("p", info.join(" · ")));
+    const estado = f.stock > 0
+      ? (f.camino ? "Disponible · más en camino" : "Disponible")
+      : (f.camino ? "En camino · sin stock" : "Agotado");
+    const marca = nodo("span", estado, "inv-estado");
+    marca.dataset.estado = f.camino ? "camino" : f.agotado ? "agotado" : f.alertas.length ? "escaso" : "disponible";
+    n.append(ficha, marca);
+    if (f.alertas.length) ficha.append(nodo("p", f.alertas.join(" · ")));
+    if (origen === "editor") {
+      const abrir = boton("Editar ficha", () => {
+        if (!datos.articulos.includes(f.articulo)) {
+          mostrarEditor();
+          return;
+        }
+        dialogo.close();
+        abrirFormulario(f.articulo);
+      });
+      abrir.setAttribute("aria-label", `Editar ficha de ${f.nombre}`);
+      n.append(abrir);
+    }
+    if (f.pack) {
+      const detalles = nodo("details");
+      detalles.open = ["incompletos", "piezasSinFoto", "fotoFalla"].includes(filtro);
+      const piezas = nodo("ul");
+      piezas.append(...f.piezas.map(p => nodo("li", [
+        p.nombre, p.stock ? unidad(p.stock) : "Agotada",
+        !p.foto ? "Sin foto propia" : fotoFalla(p.foto) ? "Foto no abre" : ""
+      ].filter(Boolean).join(" · "))));
+      detalles.append(nodo("summary", "Ver piezas del pack"), piezas);
+      n.append(detalles);
+    }
+    return n;
+  }
+
+  function detalle() {
+    const filtro = selector.value || "todos", cat = porCategoria.value, q = clave(buscador.value);
+    const encontradas = filas.filter(f => {
+      if (cat && cat !== f.categoria || !coincide(f, filtro)) return false;
+      return !q || [f.nombre, f.articulo.alias, ...f.piezas.map(p => p.nombre)].some(t => clave(t).includes(q));
+    });
+    const total = suma(encontradas);
+    $("invResultados").textContent = `${encontradas.length} ${encontradas.length === 1 ? "ficha" : "fichas"} · ${unidad(total)} en stock`;
+    for (const b of $("invResumen").children) b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro));
+    $("invLista").replaceChildren(...(encontradas.length
+      ? encontradas.map(f => fila(f, filtro)) : [nodo("p", "No hay fichas que coincidan.", "inv-nota")]));
+  }
+
+  function controles({ ocupado = false, datosListos = true, aviso = "" } = {}) {
+    $("invContenido").hidden = !datosListos;
+    $("invImprimir").disabled = !datosListos;
+    $("invFotos").disabled = !datosListos;
+    $("invAviso").hidden = !aviso;
+    $("invAviso").textContent = aviso;
+    $("invOrigen").textContent = ocupado ? "Consultando la web publicada…" : fuente;
+    for (const b of dialogo.querySelectorAll("[data-inv-origen]")) {
+      b.setAttribute("aria-pressed", String(b.dataset.invOrigen === origen));
+    }
+  }
+  function presentar(datosFuente, etiqueta, aviso = "") {
+    catalogo = datosFuente;
+    filas = fichas(catalogo);
+    categorias = [...new Set([...catalogo.categorias.map(c => texto(c.nombre ?? c)), ...filas.map(f => f.categoria)].filter(Boolean))];
+    fuente = etiqueta;
+    avisoFuente = aviso;
+    buscador.value = "";
+    porCategoria.replaceChildren(opcion("", "Todas"), ...categorias.map(c => opcion(c, c)));
+    selector.replaceChildren(...Object.entries(titulos).filter(([id]) => id !== "fotoFalla").map(([id, t]) => opcion(id, t)));
+    controles({ aviso: avisoFuente });
+    resumen();
+    tablaCategorias();
+    detalle();
+  }
+  function reiniciarVista() {
+    peticion?.abort();
+    revisar?.abort();
+    comprobaciones = new Map();
+    dialogo.scrollTop = 0;
+  }
+  function mostrarEditor() {
+    reiniciarVista();
+    origen = "editor";
+    urlFotos = document.baseURI;
+    const aviso = datos.ajustes.hojaUrl ? "Esta vista usa las cantidades del editor. Consulta «Web publicada» para revisar la fuente pública." : "";
+    presentar(datos, sucio ? "En el editor · borrador con cambios locales" : "En el editor · datos cargados", aviso);
+  }
+
+  function datosPublicados(textoJS) {
+    // Los dos editores generan estas declaraciones con valores JSON.
+    const leer = (nombre, tipo) => {
+      const inicio = new RegExp(`^const ${nombre}\\s*=\\s*`, "m").exec(textoJS);
+      if (!inicio) throw new Error("No se reconoció el archivo del catálogo.");
+      const literal = textoJS.slice(inicio.index + inicio[0].length).split(/^const\s+/m)[0];
+      const final = literal.lastIndexOf(";");
+      if (final < 0) throw new Error("El archivo del catálogo está incompleto.");
+      const valor = JSON.parse(literal.slice(0, final));
+      if (!valor || Array.isArray(valor) !== (tipo === "lista")) throw new Error("El archivo contiene datos de catálogo inesperados.");
+      return valor;
+    };
+    return { ajustes: leer("AJUSTES", "objeto"), categorias: leer("CATEGORIAS", "lista"), articulos: leer("ARTICULOS", "lista") };
+  }
+
+  async function cantidadesHoja(d) {
+    const hoja = await leerHoja(d.ajustes.hojaUrl);
+    if (!hoja.columnas.cantidad) return 0;
+    const simples = new Map(), porPack = new Map();
+    for (const fila of hoja.datos) {
+      const pos = fila.nombre.indexOf("|");
+      if (pos > 0) {
+        const pack = clave(fila.nombre.slice(0, pos));
+        if (!porPack.has(pack)) porPack.set(pack, []);
+        porPack.get(pack).push([clave(fila.nombre.slice(pos + 1)), fila.cantidad]);
+      } else simples.set(clave(fila.nombre), fila.cantidad);
+    }
+    let cambios = 0;
+    for (const a of d.articulos) {
+      const pack = clave(a.nombre), piezas = listaPiezas(a);
+      if (!piezas.length) {
+        const v = simples.get(pack);
+        if (v != null) { a.cantidad = numero(v); cambios++; }
+      }
+      for (const [nombre, v] of porPack.get(pack) || []) {
+        const p = piezas.find(pieza => clave(pieza.nombre) === nombre);
+        if (p && v != null) { p.cantidad = numero(v); cambios++; }
+      }
+    }
+    return cambios;
+  }
+
+  async function mostrarWeb() {
+    reiniciarVista();
+    origen = "web";
+    fuente = "Web publicada";
+    controles({ ocupado: true, datosListos: false });
+    const consulta = new AbortController();
+    peticion = consulta;
+    const limite = setTimeout(() => consulta.abort(), 22000);
+    try {
+      const { usuario, repo } = ghConfig();
+      const base = urlSitio(usuario && repo ? { usuario, repo } : { usuario: "Jogopines", repo: "jogopines.github.io" });
+      const respuesta = await fetch(new URL("articulos.js", base), { signal: consulta.signal, cache: "no-store" });
+      if (!respuesta.ok) throw new Error("La web no devolvió el archivo del catálogo.");
+      const publicado = datosPublicados(await respuesta.text());
+      let aviso = "";
+      if (publicado.ajustes.hojaUrl) {
+        try {
+          const n = await cantidadesHoja(publicado);
+          aviso = n ? `La hoja vinculada aportó cantidades para ${n} registros.` : "La hoja vinculada no aportó cantidades coincidentes. Se muestran las del archivo publicado.";
+        } catch {
+          aviso = "La hoja vinculada no se pudo leer. Se muestran las cantidades del archivo publicado.";
+        }
+      }
+      if (peticion !== consulta || consulta.signal.aborted || !dialogo.open) return;
+      urlFotos = base;
+      presentar(publicado, "Web publicada · consulta actual", aviso);
+    } catch {
+      if (peticion !== consulta || !dialogo.open || origen !== "web") return;
+      controles({ datosListos: false, aviso: "No se pudo consultar la web publicada. Pulsa «Web publicada» para reintentar o vuelve a «En el editor»." });
+    } finally {
+      clearTimeout(limite);
+    }
+  }
+
+  async function verificarFotos() {
+    revisar?.abort();
+    const consulta = new AbortController();
+    revisar = consulta;
+    const rutas = [...new Set(filas.flatMap(f => [f.foto, ...f.piezas.map(p => p.foto)]).filter(Boolean))];
+    const pendientes = origen === "editor" && typeof fotosPendientes !== "undefined" ? fotosPendientes : new Map();
+    const resultados = new Map();
+    const botonFotos = $("invFotos");
+    botonFotos.disabled = true;
+    let siguiente = 0;
+    let completadas = 0;
+    function probar(ruta) {
+      if (pendientes.has(ruta)) return Promise.resolve("ok");
+      const url = rutaFoto(ruta);
+      if (!url) return Promise.resolve("fallo");
+      return new Promise(ok => {
+        const img = new Image();
+        const fin = estado => {
+          clearTimeout(t);
+          consulta.signal.removeEventListener("abort", cancelar);
+          img.onload = img.onerror = null;
+          ok(estado);
+        };
+        const cancelar = () => { fin("sin verificar"); img.removeAttribute("src"); };
+        const t = setTimeout(cancelar, 7000);
+        consulta.signal.addEventListener("abort", cancelar, { once: true });
+        img.onload = () => fin("ok");
+        img.onerror = () => fin("fallo");
+        img.src = url;
+      });
+    }
+    const progreso = $("invAviso");
+    progreso.hidden = false;
+    progreso.textContent = `Comprobando 0 de ${rutas.length} rutas de foto…`;
+    await Promise.all(Array.from({ length: Math.min(6, rutas.length) }, async () => {
+      while (!consulta.signal.aborted && siguiente < rutas.length) {
+        const ruta = rutas[siguiente++];
+        resultados.set(ruta, await probar(ruta));
+        completadas++;
+        if (!consulta.signal.aborted && (completadas % 5 === 0 || completadas === rutas.length)) {
+          progreso.textContent = `Comprobando ${completadas} de ${rutas.length} rutas de foto…`;
+        }
+      }
+    }));
+    if (consulta.signal.aborted || revisar !== consulta) return;
+    comprobaciones = resultados;
+    botonFotos.disabled = false;
+    if (!selector.querySelector('option[value="fotoFalla"]')) selector.append(opcion("fotoFalla", titulos.fotoFalla));
+    const n = [...resultados.values()].filter(v => v === "fallo").length;
+    const sinVerificar = [...resultados.values()].filter(v => v === "sin verificar").length;
+    progreso.textContent = [avisoFuente, `Fotos comprobadas: ${rutas.length - sinVerificar}. ${n} rutas no abren.`, sinVerificar ? `${sinVerificar} quedaron sin verificar por demora.` : ""].filter(Boolean).join(" ");
+    if (n) { selector.value = "fotoFalla"; porCategoria.value = ""; buscador.value = ""; }
+    detalle();
+  }
+
+  function imprimir() {
+    const informe = $("invInforme");
+    const disponibles = filas.filter(f => f.stock > 0);
+    const fecha = new Intl.DateTimeFormat("es-PA", { dateStyle: "long", timeZone: "America/Panama" }).format(Date.now());
+    informe.replaceChildren(
+      nodo("h1", "Jogopines · Inventario disponible"),
+      nodo("p", `${fecha} · ${fuente}`),
+      nodo("p", `${unidad(suma(disponibles))} en ${disponibles.length} fichas. Los totales de packs incluyen sus piezas.`)
+    );
+    if (avisoFuente) informe.append(nodo("p", avisoFuente));
+    if (!disponibles.length) informe.append(nodo("p", "No hay unidades disponibles."));
+    for (const cat of categorias) {
+      const grupo = disponibles.filter(f => f.categoria === cat);
+      if (!grupo.length) continue;
+      const tabla = nodo("table");
+      tabla.createTHead().insertRow().append(nodo("th", "Artículo"), nodo("th", "Unidades"));
+      const cuerpo = tabla.createTBody();
+      for (const f of grupo) {
+        cuerpo.insertRow().append(nodo("td", f.nombre + (f.pack ? ` · Pack (${f.variantes} diseños disponibles)` : "")), nodo("td", nf.format(f.stock)));
+      }
+      informe.append(nodo("h2", `${cat} · ${unidad(suma(grupo))}`), tabla);
+    }
+    informe.hidden = false;
+    document.body.classList.add("inv-imprimiendo");
+    window.print();
+  }
+  window.addEventListener("afterprint", () => {
+    document.body.classList.remove("inv-imprimiendo");
+    $("invInforme").hidden = true;
+  });
+
+  $("fDesdeMedidas").addEventListener("click", () => {
+    const piezas = parsePiezas($("fMedidas").value).filter(p => p.medidas);
+    const salida = $("fError");
+    if (fPz.length) { salida.textContent = "Este pack ya tiene piezas. Puedes editar sus campos directamente."; return; }
+    if (piezas.length < 2) { salida.textContent = "Escribe al menos dos nombres con medidas en el campo Medidas."; return; }
+    const cantidad = Number($("fCantidad").value);
+    if (cantidad !== 0 && cantidad !== piezas.length) {
+      salida.textContent = `Encontré ${piezas.length} piezas. Ajusta la cantidad para que coincida o usa la lista de nombres para definirlas a mano.`;
+      return;
+    }
+    fPz = piezas.map(p => ({ ...p, imagen: "", precio: "", cantidad: cantidad === 0 ? 0 : 1 }));
+    salida.textContent = "";
+    renderPiezasForm();
+  });
+
+  $("detectar").addEventListener("click", () => {
+    dialogo.showModal();
+    mostrarEditor();
+  });
+  $("invCerrar").addEventListener("click", () => dialogo.close());
+  dialogo.addEventListener("close", () => { if (!dialogo.open) reiniciarVista(); });
+  for (const b of dialogo.querySelectorAll("[data-inv-origen]")) {
+    b.addEventListener("click", b.dataset.invOrigen === "editor" ? mostrarEditor : mostrarWeb);
+  }
+  selector.addEventListener("change", detalle);
+  porCategoria.addEventListener("change", detalle);
+  buscador.addEventListener("input", detalle);
+  $("invFotos").addEventListener("click", verificarFotos);
+  $("invImprimir").addEventListener("click", imprimir);
+})();
 </script>
 </body>
 </html>
